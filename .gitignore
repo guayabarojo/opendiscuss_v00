@@ -94,3 +94,5 @@ logs/
 *.bak
 *.swp
 .~*
+backend/env
+.vercel
