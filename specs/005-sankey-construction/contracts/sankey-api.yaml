@@ -1,0 +1,314 @@
+openapi: 3.0.3
+info:
+  title: Sankey Construction API
+  description: |
+    API for constructing and retrieving Sankey diagrams representing participant movement
+    across discussion rounds. Implements Spec 005 (Temporal Sankey Construction Protocol).
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Development Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: Sankey
+    description: Sankey diagram construction and retrieval
+
+paths:
+  /discussions/{discussion_id}/sankey:
+    post:
+      tags:
+        - Sankey
+      summary: Construct Sankey diagram
+      description: |
+        Constructs a Sankey diagram for a discussion by computing nodes from cluster data
+        and edges from participant movement. Requires that all rounds have completed clustering
+        (Spec 4). Idempotent: subsequent calls return cached result.
+      operationId: constructSankey
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique discussion identifier
+      requestBody:
+        description: Optional configuration for Sankey construction
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                include_alignment:
+                  type: boolean
+                  default: true
+                  description: Include display_group_id metadata from Spec 4 alignment
+                include_derived_metrics:
+                  type: boolean
+                  default: true
+                  description: Include pct_of_from and pct_of_to on edges
+      responses:
+        '201':
+          description: Sankey diagram successfully constructed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SankeyGraph'
+        '200':
+          description: Sankey diagram already exists (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SankeyGraph'
+        '400':
+          description: Bad request (e.g., missing cluster data, incomplete rounds)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Discussion not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Unprocessable entity (e.g., invariant validation failed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Sankey
+      summary: Retrieve Sankey diagram
+      description: |
+        Retrieves the constructed Sankey diagram for a discussion. Returns 404 if Sankey
+        has not been constructed yet.
+      operationId: getSankey
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique discussion identifier
+      responses:
+        '200':
+          description: Sankey diagram found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SankeyGraph'
+        '404':
+          description: Discussion or Sankey not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    SankeyGraph:
+      type: object
+      required:
+        - discussion_id
+        - rounds
+        - columns
+        - edges
+        - created_at
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the discussion
+        rounds:
+          type: array
+          items:
+            type: integer
+          description: Ordered list of round indices (e.g., [1, 2, 3])
+          minItems: 1
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Column'
+          description: Ordered list of columns (one per round)
+          minItems: 1
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+          description: List of all flows between adjacent columns
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when Sankey was constructed
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional metadata (e.g., construction time, version)
+
+    Column:
+      type: object
+      required:
+        - round_index
+        - nodes
+      properties:
+        round_index:
+          type: integer
+          minimum: 1
+          description: 1-based round number
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+          description: All thought space nodes for this round
+          minItems: 1
+        total_participants:
+          type: integer
+          minimum: 0
+          description: Derived sum of node user_counts
+
+    Node:
+      type: object
+      required:
+        - node_id
+        - cluster_id
+        - label_summary
+        - user_count
+        - user_pct
+      properties:
+        node_id:
+          type: string
+          description: Unique node identifier (e.g., "n_r2_c8")
+          pattern: '^n_r\d+_c\d+$'
+        cluster_id:
+          type: string
+          description: Cluster ID from Spec 4 (maps to ThoughtSpace)
+        label_summary:
+          type: string
+          minLength: 1
+          description: Exact label from Spec 4 (medoid summary text)
+        user_count:
+          type: integer
+          minimum: 1
+          description: Number of participants in this thought space
+        user_pct:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Percentage of round's total participants (0.0 to 1.0)
+        display_group_id:
+          type: string
+          nullable: true
+          description: Optional alignment group ID from Spec 4 (for color continuity)
+
+    Edge:
+      type: object
+      required:
+        - from_round_index
+        - to_round_index
+        - from_cluster_id
+        - to_cluster_id
+        - user_count
+      properties:
+        from_round_index:
+          type: integer
+          minimum: 1
+          description: Source round
+        to_round_index:
+          type: integer
+          minimum: 1
+          description: Target round (must be from_round_index + 1)
+        from_cluster_id:
+          type: string
+          description: Source cluster ID
+        to_cluster_id:
+          type: string
+          description: Target cluster ID
+        user_count:
+          type: integer
+          minimum: 1
+          description: Number of participants making this transition
+        pct_of_from:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: Optional percentage of source cluster (user_count / from_node.user_count)
+        pct_of_to:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: Optional percentage of target cluster (user_count / to_node.user_count)
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type (e.g., "NotFound", "BadRequest")
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional additional error context
+
+    ValidationError:
+      type: object
+      required:
+        - error
+        - message
+        - violations
+      properties:
+        error:
+          type: string
+          enum:
+            - ValidationError
+        message:
+          type: string
+          description: Summary of validation failure
+        violations:
+          type: array
+          items:
+            type: object
+            properties:
+              invariant:
+                type: string
+                description: Which invariant was violated (e.g., "PercentageSum")
+              expected:
+                type: string
+                description: Expected value or condition
+              actual:
+                type: string
+                description: Actual value that violated invariant
+              context:
+                type: object
+                additionalProperties: true
+                description: Additional context (e.g., which round)

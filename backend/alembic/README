@@ -1,0 +1,31 @@
+Generic single-database configuration for async SQLAlchemy.
+
+This Alembic setup is configured for:
+- Async SQLAlchemy operations using asyncpg
+- PostgreSQL 14+ database
+- Automatic migration file formatting with Black
+- Type comparison for detecting model changes
+- Server default comparison for completeness
+
+Usage:
+
+1. Create a new migration:
+   poetry run alembic revision --autogenerate -m "description"
+
+2. Apply migrations:
+   poetry run alembic upgrade head
+
+3. Rollback one migration:
+   poetry run alembic downgrade -1
+
+4. View migration history:
+   poetry run alembic history
+
+5. View current revision:
+   poetry run alembic current
+
+Configuration:
+- Database URL is loaded from src/config.py settings
+- Migration files are timestamped for easy ordering
+- All models must be imported in src/models/__init__.py
+- Base.metadata is used as target_metadata in env.py

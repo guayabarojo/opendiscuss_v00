@@ -1,0 +1,256 @@
+/* DiscussionCreate Component Styles */
+
+.discussion-create-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.discussion-create-card {
+  background: white;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.discussion-create-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.discussion-create-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 32px 0;
+}
+
+.discussion-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Form Groups */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.required {
+  color: #dc3545;
+}
+
+.form-hint {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+/* Form Inputs */
+.form-input,
+.form-select,
+.form-textarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+  border-color: #dc3545;
+}
+
+.form-input.error:focus,
+.form-select.error:focus,
+.form-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Questions List */
+.questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.question-item {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.question-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: #dc3545;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.btn-remove:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.question-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.char-count.error {
+  color: #dc3545;
+}
+
+.btn-add-question {
+  padding: 10px 16px;
+  background: white;
+  border: 2px dashed #007bff;
+  border-radius: 4px;
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-question:hover {
+  background: #f0f8ff;
+  border-color: #0056b3;
+  color: #0056b3;
+}
+
+/* Error Messages */
+.error-message {
+  font-size: 13px;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Alert */
+.alert {
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #545b62;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .discussion-create-container {
+    padding: 16px;
+  }
+
+  .discussion-create-card {
+    padding: 24px 16px;
+  }
+
+  .discussion-create-title {
+    font-size: 24px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

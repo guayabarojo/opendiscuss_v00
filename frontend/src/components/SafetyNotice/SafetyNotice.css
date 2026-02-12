@@ -1,0 +1,188 @@
+/**
+ * SafetyNotice component styles (T071).
+ *
+ * Provides clear visual differentiation between:
+ * - Warning (profanity neutralized) - yellow/amber
+ * - Error (disallowed content) - red
+ * - Info (generic safety notice) - blue
+ */
+
+.safety-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+  margin: 1rem 0;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Variant: Warning (profanity neutralized) */
+.safety-notice--warning {
+  background-color: #fff9e6;
+  border-left-color: #f59e0b;
+  color: #92400e;
+}
+
+.safety-notice--warning .safety-notice__icon {
+  color: #f59e0b;
+}
+
+/* Variant: Error (disallowed content) */
+.safety-notice--error {
+  background-color: #fef2f2;
+  border-left-color: #dc2626;
+  color: #7f1d1d;
+}
+
+.safety-notice--error .safety-notice__icon {
+  color: #dc2626;
+}
+
+/* Variant: Info (generic safety notice) */
+.safety-notice--info {
+  background-color: #eff6ff;
+  border-left-color: #3b82f6;
+  color: #1e3a8a;
+}
+
+.safety-notice--info .safety-notice__icon {
+  color: #3b82f6;
+}
+
+/* Icon */
+.safety-notice__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Content container */
+.safety-notice__content {
+  flex: 1;
+}
+
+/* Title */
+.safety-notice__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Message */
+.safety-notice__message {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.safety-notice--error .safety-notice__message {
+  margin-bottom: 1.5rem;
+}
+
+/* Action button (for disallowed content) */
+.safety-notice__action {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.safety-notice__action:hover {
+  background-color: #b91c1c;
+}
+
+.safety-notice__action:focus {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+.safety-notice__action:active {
+  background-color: #991b1b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .safety-notice {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .safety-notice__icon {
+    font-size: 1.25rem;
+  }
+
+  .safety-notice__title {
+    font-size: 0.9375rem;
+  }
+
+  .safety-notice__message {
+    font-size: 0.8125rem;
+  }
+
+  .safety-notice__action {
+    width: 100%;
+    padding: 0.625rem 1rem;
+  }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .safety-notice--warning {
+    background-color: #422006;
+    color: #fef3c7;
+  }
+
+  .safety-notice--error {
+    background-color: #450a0a;
+    color: #fecaca;
+  }
+
+  .safety-notice--info {
+    background-color: #172554;
+    color: #dbeafe;
+  }
+}
+
+/* Accessibility: High contrast mode */
+@media (prefers-contrast: high) {
+  .safety-notice {
+    border-width: 2px;
+    border-left-width: 6px;
+  }
+
+  .safety-notice__title {
+    font-weight: 700;
+  }
+}
+
+/* Print styles */
+@media print {
+  .safety-notice {
+    border: 2px solid #000;
+    page-break-inside: avoid;
+  }
+
+  .safety-notice__action {
+    display: none;
+  }
+}

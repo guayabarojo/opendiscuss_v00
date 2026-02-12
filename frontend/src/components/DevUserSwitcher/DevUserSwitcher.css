@@ -1,0 +1,195 @@
+.dev-user-switcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.dev-switcher-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.dev-switcher-toggle:hover {
+  background: #1d4ed8;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.dev-icon {
+  font-size: 18px;
+}
+
+.dev-label {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dev-switcher-panel {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  width: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.dev-switcher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dev-switcher-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dev-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+}
+
+.dev-close-btn:hover {
+  color: #111827;
+}
+
+.dev-switcher-content {
+  padding: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.dev-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dev-user-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.dev-user-btn:hover {
+  background: #f3f4f6;
+  border-color: #2563eb;
+}
+
+.dev-user-btn.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.host {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.role-badge.participant {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.email {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dev-clear-btn {
+  width: 100%;
+  padding: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dev-clear-btn:hover {
+  background: #fecaca;
+  border-color: #fca5a5;
+}
+
+.dev-no-users {
+  text-align: center;
+  padding: 24px;
+}
+
+.dev-no-users p {
+  margin: 8px 0;
+  color: #6b7280;
+}
+
+.dev-hint {
+  font-size: 12px;
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px !important;
+}
+
+.dev-hint code {
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}

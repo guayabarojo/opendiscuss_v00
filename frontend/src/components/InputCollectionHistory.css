@@ -1,0 +1,202 @@
+.submission-history {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.history-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.rate-limit-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.submission-item {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.submission-item.counted {
+  background: #ecfdf5;
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.submission-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.submission-number {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.submission-timestamp {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.modality-badge {
+  font-size: 0.875rem;
+  padding: 0.125rem 0.5rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 4px;
+}
+
+.submission-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.counted-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  background: #10b981;
+  color: white;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.counted-message {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #d1fae5;
+  border-left: 3px solid #10b981;
+  color: #065f46;
+  font-size: 0.875rem;
+  border-radius: 4px;
+}
+
+.resubmit-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.resubmit-info p {
+  margin: 0;
+  color: #1e40af;
+  font-size: 0.875rem;
+}
+
+.rate-limit-reached {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+}
+
+.rate-limit-reached p {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.error-message {
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #991b1b;
+}
+
+.error-message p {
+  margin: 0 0 0.5rem 0;
+}
+
+.retry-button {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.retry-button:hover {
+  background: #b91c1c;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+.loading p {
+  margin: 0.5rem 0 0 0;
+}

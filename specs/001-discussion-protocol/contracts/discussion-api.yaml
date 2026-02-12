@@ -1,0 +1,655 @@
+openapi: 3.0.3
+info:
+  title: OpenDiscuss Discussion Protocol API
+  description: Discussion lifecycle management and round coordination
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Team
+
+servers:
+  - url: https://api.opendiscuss.example/v1
+    description: Production
+  - url: http://localhost:8000/v1
+    description: Development
+
+tags:
+  - name: discussions
+    description: Discussion lifecycle operations
+  - name: rounds
+    description: Round state and timing queries
+  - name: participants
+    description: Participant registration and dropout tracking
+
+paths:
+  /discussions:
+    post:
+      tags: [discussions]
+      summary: Create new discussion
+      operationId: createDiscussion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiscussionRequest'
+      responses:
+        '201':
+          description: Discussion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discussion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    get:
+      tags: [discussions]
+      summary: List discussions
+      operationId: listDiscussions
+      parameters:
+        - name: community_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [CREATED, ACTIVE, COMPLETED, TERMINATED]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of discussions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discussions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Discussion'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /discussions/{discussion_id}:
+    get:
+      tags: [discussions]
+      summary: Get discussion details
+      operationId: getDiscussion
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+      responses:
+        '200':
+          description: Discussion details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discussion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discussions/{discussion_id}/start:
+    post:
+      tags: [discussions]
+      summary: Start discussion (begin Round 1)
+      operationId: startDiscussion
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+      responses:
+        '200':
+          description: Discussion started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discussion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discussions/{discussion_id}/advance:
+    post:
+      tags: [discussions]
+      summary: Advance to next round (host trigger)
+      description: |
+        Host explicitly triggers round advancement. Works in both modes:
+        - HOST_DEFINED: Opens submission window for next round
+        - AUTO_GENERATED: Opens window after question generated (QUESTION_READY state)
+      operationId: advanceRound
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+      responses:
+        '200':
+          description: Round advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Round'
+        '400':
+          description: Cannot advance (current round not complete or question not ready)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discussions/{discussion_id}/terminate:
+    post:
+      tags: [discussions]
+      summary: Terminate discussion early (host action)
+      operationId: terminateDiscussion
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+              required: [reason]
+      responses:
+        '200':
+          description: Discussion terminated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discussion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discussions/{discussion_id}/report:
+    get:
+      tags: [discussions]
+      summary: Get final discussion report (includes Sankey diagram)
+      operationId: getDiscussionReport
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+      responses:
+        '200':
+          description: Final report with Sankey diagram
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscussionReport'
+        '400':
+          description: Discussion not yet completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /rounds/{round_id}:
+    get:
+      tags: [rounds]
+      summary: Get round details and status
+      operationId: getRound
+      parameters:
+        - $ref: '#/components/parameters/RoundId'
+      responses:
+        '200':
+          description: Round details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Round'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /rounds/{round_id}/status:
+    get:
+      tags: [rounds]
+      summary: Get round status with timing info
+      description: Real-time status for countdown timers and progress indicators
+      operationId: getRoundStatus
+      parameters:
+        - $ref: '#/components/parameters/RoundId'
+      responses:
+        '200':
+          description: Round status with remaining time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoundStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /discussions/{discussion_id}/participants:
+    get:
+      tags: [participants]
+      summary: List participants in discussion
+      operationId: listParticipants
+      parameters:
+        - $ref: '#/components/parameters/DiscussionId'
+        - name: include_dropouts
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of participants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  participants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Participant'
+                  total:
+                    type: integer
+                  active_count:
+                    type: integer
+                  dropout_count:
+                    type: integer
+
+components:
+  parameters:
+    DiscussionId:
+      name: discussion_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    RoundId:
+      name: round_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    CreateDiscussionRequest:
+      type: object
+      required:
+        - community_id
+        - mode
+        - total_rounds
+      properties:
+        community_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [HOST_DEFINED, AUTO_GENERATED]
+          description: |
+            HOST_DEFINED: Host provides all questions upfront
+            AUTO_GENERATED: System generates questions from Sankey patterns
+        total_rounds:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Maximum number of rounds (MVP: 3-5 recommended)
+        questions:
+          type: array
+          items:
+            type: string
+            minLength: 10
+            maxLength: 200
+          minItems: 1
+          maxItems: 10
+          description: Required for HOST_DEFINED mode, ignored for AUTO_GENERATED
+        seed_question:
+          type: string
+          minLength: 10
+          maxLength: 200
+          description: Initial question for AUTO_GENERATED mode
+
+    Discussion:
+      type: object
+      required:
+        - discussion_id
+        - community_id
+        - mode
+        - total_rounds
+        - status
+        - created_at
+        - host_user_id
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        community_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [HOST_DEFINED, AUTO_GENERATED]
+        total_rounds:
+          type: integer
+          minimum: 1
+          maximum: 10
+        current_round_num:
+          type: integer
+          minimum: 0
+          description: 0 if not started, 1-N for active rounds
+        status:
+          type: string
+          enum: [CREATED, ACTIVE, COMPLETED, TERMINATED]
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        terminated_reason:
+          type: string
+          nullable: true
+        host_user_id:
+          type: string
+          format: uuid
+
+    Round:
+      type: object
+      required:
+        - round_id
+        - discussion_id
+        - round_num
+        - question_text
+        - status
+        - submission_window_duration_sec
+      properties:
+        round_id:
+          type: string
+          format: uuid
+        discussion_id:
+          type: string
+          format: uuid
+        round_num:
+          type: integer
+          minimum: 1
+        question_text:
+          type: string
+          minLength: 10
+          maxLength: 200
+        status:
+          type: string
+          enum:
+            - PENDING
+            - QUESTION_READY
+            - SUBMISSION_OPEN
+            - SUBMISSION_CLOSED
+            - SUMMARIZING
+            - APPROVING
+            - CLUSTERING
+            - SANKEY_BUILDING
+            - COMPLETE
+            - FAILED
+        submission_window_duration_sec:
+          type: integer
+          minimum: 180
+          maximum: 360
+          description: 3-6 minutes
+        submission_window_start:
+          type: string
+          format: date-time
+          nullable: true
+        submission_window_end:
+          type: string
+          format: date-time
+          nullable: true
+        approval_deadline:
+          type: string
+          format: date-time
+          nullable: true
+          description: Computed as submission_window_end + 10 minutes
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    RoundStatus:
+      type: object
+      required:
+        - round_id
+        - status
+        - current_time
+      properties:
+        round_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - PENDING
+            - QUESTION_READY
+            - SUBMISSION_OPEN
+            - SUBMISSION_CLOSED
+            - SUMMARIZING
+            - APPROVING
+            - CLUSTERING
+            - SANKEY_BUILDING
+            - COMPLETE
+            - FAILED
+        current_time:
+          type: string
+          format: date-time
+        submission_window_end:
+          type: string
+          format: date-time
+          nullable: true
+        approval_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        remaining_time_sec:
+          type: integer
+          nullable: true
+          description: Seconds remaining in current timed phase (null if not in timed phase)
+        participant_stats:
+          type: object
+          properties:
+            submitted_count:
+              type: integer
+            approved_count:
+              type: integer
+            pending_approval_count:
+              type: integer
+
+    Participant:
+      type: object
+      required:
+        - participant_id
+        - discussion_id
+        - first_round
+        - created_at
+      properties:
+        participant_id:
+          type: string
+          format: uuid
+        discussion_id:
+          type: string
+          format: uuid
+        first_round:
+          type: integer
+        last_round:
+          type: integer
+          nullable: true
+        dropout_reason:
+          type: string
+          enum: [APPROVAL_TIMEOUT, NO_SUBMISSION, VOLUNTARY]
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    DiscussionReport:
+      type: object
+      required:
+        - discussion_id
+        - sankey_diagram
+        - metadata
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        sankey_diagram:
+          $ref: '#/components/schemas/SankeyDiagram'
+        metadata:
+          type: object
+          properties:
+            total_rounds:
+              type: integer
+            total_participants:
+              type: integer
+            duration_minutes:
+              type: number
+            questions:
+              type: array
+              items:
+                type: string
+
+    SankeyDiagram:
+      type: object
+      description: Temporal visualization of thought space movement
+      required:
+        - columns
+        - flows
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyColumn'
+        flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/Flow'
+
+    SankeyColumn:
+      type: object
+      required:
+        - round_num
+        - thought_spaces
+      properties:
+        round_num:
+          type: integer
+        thought_spaces:
+          type: array
+          items:
+            type: object
+            properties:
+              cluster_id:
+                type: string
+                format: uuid
+              label:
+                type: string
+              member_count:
+                type: integer
+              member_pct:
+                type: number
+                minimum: 0
+                maximum: 1
+
+    Flow:
+      type: object
+      required:
+        - flow_id
+        - source_cluster_id
+        - target_cluster_id
+        - participant_count
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        source_cluster_id:
+          type: string
+          format: uuid
+        target_cluster_id:
+          type: string
+          format: uuid
+        participant_count:
+          type: integer
+          minimum: 1
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

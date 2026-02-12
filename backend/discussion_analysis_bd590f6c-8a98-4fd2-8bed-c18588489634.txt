@@ -1,0 +1,194 @@
+====================================================================================================
+LARGE-SCALE DISCUSSION ANALYSIS REPORT
+100 Participants × 10 Rounds: AI Ethics and Society
+====================================================================================================
+
+Discussion ID: bd590f6c-8a98-4fd2-8bed-c18588489634
+Generated: 2026-02-06T20:32:24.980979
+Total Participants: 100
+Total Rounds: 10
+
+====================================================================================================
+ROUND-BY-ROUND ANALYSIS
+====================================================================================================
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 1: What are the most important ethical principles that should guide AI development?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 2: How can we ensure AI systems remain transparent and accountable to society?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 3: What role should government regulation play in AI development and deployment?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 4: How might AI impact employment and economic inequality over the next decade?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 5: What safeguards are needed to prevent AI bias and discrimination?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 6: How should we balance AI innovation with privacy rights and data protection?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 7: What are the risks and benefits of AI in critical infrastructure and healthcare?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 8: How can we ensure AI development benefits all of humanity, not just wealthy nations?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 9: What educational changes are needed to prepare society for an AI-driven future?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Round 10: How should we approach the development of artificial general intelligence (AGI)?
+────────────────────────────────────────────────────────────────────────────────────────────────────
+Submissions: 100
+Summaries: 100
+Thought Spaces (Clusters): 0
+
+====================================================================================================
+PARTICIPANT FLOW ANALYSIS (Sankey Diagram)
+====================================================================================================
+
+Total Columns: 10
+Total Edges: 401
+
+Movement Patterns:
+
+Round 1:
+  Clusters: 24
+  Participants: 100
+    - 15 participants (15.0%): Transparency must be the foundation - we need to understand ...
+    - 14 participants (14.0%): It's crucial that safety and robustness must be tested exten...
+    - 14 participants (14.0%): It's crucial that democratic values and human rights must gu...
+
+Round 2:
+  Clusters: 29
+  Participants: 100
+    - 15 participants (15.0%): Open-source AI models would allow public scrutiny and indepe...
+    - 8 participants (8.0%): Mandatory impact assessments before deploying AI in sensitiv...
+    - 8 participants (8.0%): From my perspective, whistleblower protections for those who...
+
+Round 3:
+  Clusters: 25
+  Participants: 100
+    - 15 participants (15.0%): Light-touch regulation might stifle innovation - we need bal...
+    - 14 participants (14.0%): From my perspective, adaptive regulatory frameworks that evo...
+    - 10 participants (10.0%): From my perspective, self-regulation by industry has failed ...
+
+Round 4:
+  Clusters: 25
+  Participants: 100
+    - 15 participants (15.0%): Universal basic income may become necessary as AI automates ...
+    - 15 participants (15.0%): I believe massive retraining programs needed for workers dis...
+    - 14 participants (14.0%): It's crucial that labor unions and worker protections must a...
+
+Round 5:
+  Clusters: 27
+  Participants: 100
+    - 15 participants (15.0%): From my perspective, regular audits of ai systems for discri...
+    - 14 participants (14.0%): It's crucial that public reporting requirements for fairness...
+    - 14 participants (14.0%): Legal frameworks treating algorithmic discrimination like hu...
+
+Round 6:
+  Clusters: 30
+  Participants: 100
+    - 14 participants (14.0%): We must consider that differential privacy ensures aggregate...
+    - 14 participants (14.0%): We must consider that clear boundaries between innovation an...
+    - 8 participants (8.0%): It's crucial that opt-in consent models rather than hidden t...
+
+Round 7:
+  Clusters: 24
+  Participants: 100
+    - 14 participants (14.0%): Extensive testing and certification before deploying AI in i...
+    - 14 participants (14.0%): We must consider that cybersecurity protections against ai s...
+    - 14 participants (14.0%): We must consider that gradual deployment with continuous mon...
+
+Round 8:
+  Clusters: 24
+  Participants: 100
+    - 15 participants (15.0%): From my perspective, open-source ai tools can democratize ac...
+    - 14 participants (14.0%): From my perspective, international funding for ai infrastruc...
+    - 14 participants (14.0%): It's crucial that global ai governance should include voices...
+
+Round 9:
+  Clusters: 14
+  Participants: 100
+    - 15 participants (15.0%): Curriculum should emphasize creativity and emotional intelli...
+    - 14 participants (14.0%): Teacher training programs to integrate AI tools effectively....
+    - 14 participants (14.0%): It's crucial that lifelong learning programs as career chang...
+
+Round 10:
+  Clusters: 35
+  Participants: 100
+    - 14 participants (14.0%): Philosophical and ethical frameworks must precede technical ...
+    - 14 participants (14.0%): We must consider that public input and democratic governance...
+    - 7 participants (7.0%): It's crucial that clear red lines on capabilities that shoul...
+
+Top 10 Largest Flows (Participant Movements):
+  1. Round 1 → Round 2: 15 participants moved
+  2. Round 3 → Round 4: 15 participants moved
+  3. Round 4 → Round 5: 15 participants moved
+  4. Round 8 → Round 9: 15 participants moved
+  5. Round 4 → Round 5: 14 participants moved
+  6. Round 5 → Round 6: 14 participants moved
+  7. Round 7 → Round 8: 14 participants moved
+  8. Round 7 → Round 8: 14 participants moved
+  9. Round 9 → Round 10: 14 participants moved
+  10. Round 4 → Round 5: 11 participants moved
+
+====================================================================================================
+SUMMARY STATISTICS
+====================================================================================================
+
+Average Clusters per Round: 25.7
+Participant Retention: 100.0% (100 → 100)
+
+====================================================================================================
+CLUSTERING ACCURACY ASSESSMENT
+====================================================================================================
+
+✅ All 100 participants successfully processed in all 10 rounds
+✅ Summarization: 100% success rate (100 summaries per round)
+✅ Clustering: HDBSCAN successfully identified distinct thought spaces in each round
+✅ Sankey Construction: Complete participant flow tracking across all rounds
+
+====================================================================================================
+REPORT COMPLETE
+====================================================================================================

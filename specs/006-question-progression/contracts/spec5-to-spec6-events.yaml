@@ -1,0 +1,337 @@
+asyncapi: 2.6.0
+info:
+  title: Spec 5 → Spec 6 Event Contract
+  description: Event-based integration between Sankey Construction (Spec 5) and Question Progression (Spec 6)
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Team
+
+servers:
+  production:
+    url: event-bus.opendiscuss.example
+    protocol: internal
+    description: Internal event bus (in-process or message queue)
+
+channels:
+  sankey.complete:
+    description: Emitted by Spec 5 when Sankey diagram construction completes
+    subscribe:
+      summary: Spec 6 subscribes to trigger auto-question generation
+      operationId: onSankeyComplete
+      message:
+        $ref: '#/components/messages/SankeyComplete'
+
+  question.ready:
+    description: Emitted by Spec 6 when auto-generated question is ready
+    publish:
+      summary: Spec 6 publishes to notify host that question is staged
+      operationId: publishQuestionReady
+      message:
+        $ref: '#/components/messages/QuestionReady'
+
+  question.generation_failed:
+    description: Emitted by Spec 6 when auto-generation fails after max retries
+    publish:
+      summary: Spec 6 publishes to request host manual entry
+      operationId: publishGenerationFailed
+      message:
+        $ref: '#/components/messages/QuestionGenerationFailed'
+
+components:
+  messages:
+    SankeyComplete:
+      name: sankey.complete
+      title: Sankey Construction Complete
+      summary: Sankey diagram has been built and persisted for a round
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SankeyCompletePayload'
+      examples:
+        - name: Round 1 Sankey Complete
+          summary: Example payload after Round 1 completes
+          payload:
+            event_type: "sankey.complete"
+            version: "1.0.0"
+            timestamp: "2026-01-29T14:32:15.842Z"
+            discussion_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            round_id: "a8f7c2b1-91d3-4e5f-8c7a-3b9e4f6d1a2c"
+            round_num: 1
+            sankey_graph:
+              columns:
+                - round_num: 1
+                  nodes:
+                    - cluster_id: "c1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6"
+                      label_summary: "Funding constraints limit program scope"
+                      member_count: 12
+                      member_pct: 0.40
+                    - cluster_id: "d2b3c4d5-e6f7-a8b9-c0d1-e2f3a4b5c6d7"
+                      label_summary: "Staff capacity stretched across initiatives"
+                      member_count: 8
+                      member_pct: 0.27
+              flows: []
+            computation_time_ms: 1847.3
+
+    QuestionReady:
+      name: question.ready
+      title: Auto-Generated Question Ready
+      summary: Question has been generated and validated, awaiting host advancement
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/QuestionReadyPayload'
+      examples:
+        - name: Round 2 Question Generated
+          summary: Example payload when Round 2 question is ready
+          payload:
+            event_type: "question.ready"
+            version: "1.0.0"
+            timestamp: "2026-01-29T14:32:18.234Z"
+            discussion_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            round_num: 2
+            question_id: "b9c0d1e2-f3a4-b5c6-d7e8-f9a0b1c2d3e4"
+            question_text: "How could funding gaps be addressed?"
+            provenance_id: "e3f4a5b6-c7d8-e9f0-a1b2-c3d4e5f6a7b8"
+
+    QuestionGenerationFailed:
+      name: question.generation_failed
+      title: Auto-Question Generation Failed
+      summary: Generation failed after max retries; manual entry required
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/QuestionGenerationFailedPayload'
+      examples:
+        - name: API Failure After Retries
+          summary: Example payload when LLM API consistently fails
+          payload:
+            event_type: "question.generation_failed"
+            version: "1.0.0"
+            timestamp: "2026-01-29T14:33:45.678Z"
+            discussion_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            round_num: 3
+            error: "LLM API timeout after 3 retries"
+            retry_count: 3
+            fallback_action: "MANUAL_ENTRY_REQUIRED"
+
+  schemas:
+    SankeyCompletePayload:
+      type: object
+      required:
+        - event_type
+        - version
+        - timestamp
+        - discussion_id
+        - round_id
+        - round_num
+        - sankey_graph
+        - computation_time_ms
+      properties:
+        event_type:
+          type: string
+          enum: [sankey.complete]
+        version:
+          type: string
+          description: Event schema version (semantic versioning)
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+          description: Event emission timestamp (ISO 8601)
+        discussion_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+          description: Round that just completed
+        round_num:
+          type: integer
+          minimum: 1
+          description: Round number (1-indexed)
+        sankey_graph:
+          $ref: '#/components/schemas/SankeyGraph'
+        computation_time_ms:
+          type: number
+          format: float
+          minimum: 0
+          description: Time taken to construct Sankey (for monitoring)
+
+    SankeyGraph:
+      type: object
+      required:
+        - columns
+        - flows
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyColumn'
+          description: All rounds from 1 to current (for full context)
+        flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyFlow'
+          description: All flows between consecutive rounds
+
+    SankeyColumn:
+      type: object
+      required:
+        - round_num
+        - nodes
+      properties:
+        round_num:
+          type: integer
+          minimum: 1
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyNode'
+          description: Thought spaces (clusters) for this round
+
+    SankeyNode:
+      type: object
+      required:
+        - cluster_id
+        - label_summary
+        - member_count
+        - member_pct
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+        label_summary:
+          type: string
+          maxLength: 200
+          description: Medoid text (actual participant language)
+        member_count:
+          type: integer
+          minimum: 1
+          description: Number of participants in this thought space
+        member_pct:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Percentage of round participants (0.0-1.0)
+        centroid_vector:
+          type: array
+          items:
+            type: number
+            format: float
+          description: Embedding vector (optional, for cross-round alignment)
+          nullable: true
+
+    SankeyFlow:
+      type: object
+      required:
+        - flow_id
+        - source_cluster_id
+        - target_cluster_id
+        - participant_count
+      properties:
+        flow_id:
+          type: string
+          format: uuid
+        source_cluster_id:
+          type: string
+          format: uuid
+          description: Thought space in round N
+        target_cluster_id:
+          type: string
+          format: uuid
+          description: Thought space in round N+1
+        participant_count:
+          type: integer
+          minimum: 1
+          description: Number of participants who moved source→target
+        participant_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of participant_ids (for audit, not used in generation)
+
+    QuestionReadyPayload:
+      type: object
+      required:
+        - event_type
+        - version
+        - timestamp
+        - discussion_id
+        - round_num
+        - question_id
+        - question_text
+        - provenance_id
+      properties:
+        event_type:
+          type: string
+          enum: [question.ready]
+        version:
+          type: string
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+        discussion_id:
+          type: string
+          format: uuid
+        round_num:
+          type: integer
+          minimum: 2
+          description: Round number for which question was generated (N+1 after Sankey from round N)
+        question_id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+          minLength: 10
+          maxLength: 200
+          description: Auto-generated question text (validated)
+        provenance_id:
+          type: string
+          format: uuid
+          description: Reference to QuestionProvenance record for audit
+
+    QuestionGenerationFailedPayload:
+      type: object
+      required:
+        - event_type
+        - version
+        - timestamp
+        - discussion_id
+        - round_num
+        - error
+        - retry_count
+        - fallback_action
+      properties:
+        event_type:
+          type: string
+          enum: [question.generation_failed]
+        version:
+          type: string
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+        discussion_id:
+          type: string
+          format: uuid
+        round_num:
+          type: integer
+          minimum: 2
+          description: Round number for which generation failed
+        error:
+          type: string
+          description: Error message describing failure reason
+          example: "LLM API timeout after 3 retries"
+        retry_count:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Number of retry attempts made
+        fallback_action:
+          type: string
+          enum: [MANUAL_ENTRY_REQUIRED]
+          description: Next step for host to resolve failure
+
+tags:
+  - name: Spec5-Spec6
+    description: Sankey Construction to Question Progression integration

@@ -1,0 +1,327 @@
+openapi: 3.0.3
+info:
+  title: Discussion Report API
+  description: |
+    API for generating comprehensive discussion reports including Sankey diagram,
+    cluster summaries, dropout curve, and top movements. Implements Spec 005 report
+    generation requirements (FR-034 to FR-038).
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Development Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+tags:
+  - name: Reports
+    description: Discussion report generation and export
+
+paths:
+  /discussions/{discussion_id}/report:
+    post:
+      tags:
+        - Reports
+      summary: Generate discussion report
+      description: |
+        Generates a comprehensive discussion report including the final Sankey diagram,
+        per-round cluster summaries, participant dropout curve, and top movement edges.
+        Requires that Sankey has been constructed (POST /sankey first). Idempotent:
+        subsequent calls return cached report.
+      operationId: generateReport
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique discussion identifier
+      requestBody:
+        description: Report generation options
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                top_movements_count:
+                  type: integer
+                  default: 5
+                  minimum: 1
+                  maximum: 20
+                  description: Number of top movements to include per round transition
+                include_metadata:
+                  type: boolean
+                  default: true
+                  description: Include construction metadata in report
+      responses:
+        '201':
+          description: Report successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscussionReport'
+        '200':
+          description: Report already exists (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscussionReport'
+        '400':
+          description: Bad request (e.g., Sankey not constructed yet)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Discussion not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Reports
+      summary: Retrieve discussion report
+      description: |
+        Retrieves the generated discussion report. Returns 404 if report has not been
+        generated yet.
+      operationId: getReport
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique discussion identifier
+      responses:
+        '200':
+          description: Report found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscussionReport'
+        '404':
+          description: Discussion or report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /discussions/{discussion_id}/report/export:
+    get:
+      tags:
+        - Reports
+      summary: Export discussion report
+      description: |
+        Exports the discussion report in specified format. Currently supports JSON only
+        (MVP). PDF export deferred post-MVP.
+      operationId: exportReport
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Unique discussion identifier
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+            default: json
+          description: Export format (only JSON supported in MVP)
+      responses:
+        '200':
+          description: Report exported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscussionReport'
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: Attachment filename (e.g., "discussion_abc123_report.json")
+        '404':
+          description: Discussion or report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    DiscussionReport:
+      type: object
+      required:
+        - discussion_id
+        - sankey_graph
+        - cluster_summaries
+        - dropout_curve
+        - top_movements
+        - generated_at
+        - export_format
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the discussion
+        sankey_graph:
+          $ref: '#/components/schemas/SankeyGraph'
+        cluster_summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoundClusterSummary'
+          description: Per-round cluster summaries
+        dropout_curve:
+          type: array
+          items:
+            $ref: '#/components/schemas/DropoutPoint'
+          description: Participant counts per round
+        top_movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopMovement'
+          description: Largest flows per round transition
+        generated_at:
+          type: string
+          format: date-time
+          description: Timestamp when report was generated
+        export_format:
+          type: string
+          enum:
+            - json-v1
+          description: Format version
+
+    SankeyGraph:
+      type: object
+      description: Reference to sankey-api.yaml schema
+      externalDocs:
+        url: ./sankey-api.yaml#/components/schemas/SankeyGraph
+
+    RoundClusterSummary:
+      type: object
+      required:
+        - round_index
+        - clusters
+      properties:
+        round_index:
+          type: integer
+          minimum: 1
+          description: Round number
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterInfo'
+          description: List of cluster labels and counts
+
+    ClusterInfo:
+      type: object
+      required:
+        - label
+        - user_count
+      properties:
+        label:
+          type: string
+          minLength: 1
+          description: Cluster label summary
+        user_count:
+          type: integer
+          minimum: 1
+          description: Number of participants
+
+    DropoutPoint:
+      type: object
+      required:
+        - round_index
+        - participant_count
+      properties:
+        round_index:
+          type: integer
+          minimum: 1
+          description: Round number
+        participant_count:
+          type: integer
+          minimum: 0
+          description: Total participants in round
+
+    TopMovement:
+      type: object
+      required:
+        - from_round
+        - to_round
+        - movements
+      properties:
+        from_round:
+          type: integer
+          minimum: 1
+          description: Source round
+        to_round:
+          type: integer
+          minimum: 1
+          description: Target round (must be from_round + 1)
+        movements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MovementDetail'
+          description: Top N movements (default 5)
+          minItems: 0
+
+    MovementDetail:
+      type: object
+      required:
+        - from_label
+        - to_label
+        - user_count
+      properties:
+        from_label:
+          type: string
+          description: Source cluster label
+        to_label:
+          type: string
+          description: Target cluster label
+        user_count:
+          type: integer
+          minimum: 1
+          description: Number of participants
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type (e.g., "NotFound", "BadRequest")
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Optional additional error context

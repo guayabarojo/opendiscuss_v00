@@ -1,0 +1,578 @@
+openapi: 3.0.3
+info:
+  title: Semantic Clustering & Hybrid Alignment Protocol API
+  description: |
+    API contract for clustering approved summaries into thought spaces using HDBSCAN
+    and aligning clusters across adjacent rounds for visual continuity.
+
+    **Constitutional Compliance**:
+    - Semantic Accuracy Over Aesthetics: No forced merging, preserve minority clusters
+    - Intent Fidelity: Medoid labels use actual participant language (no AI generation)
+    - Temporal Transparency: Per-round clustering independence, alignment presentation-only
+
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Protocol Suite
+    url: https://github.com/opendiscuss
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api.opendiscuss.example/api/v1
+    description: Production (placeholder)
+
+tags:
+  - name: clustering
+    description: Semantic clustering endpoints
+  - name: alignment
+    description: Cross-round alignment endpoints
+
+paths:
+  /clusters/trigger:
+    post:
+      tags:
+        - clustering
+      summary: Trigger clustering for a round
+      description: |
+        Initiates clustering workflow for approved summaries in a round.
+
+        **Workflow**:
+        1. Fetch approved summaries from Spec 3
+        2. Generate SBERT embeddings (all-MiniLM-L6-v2)
+        3. Run HDBSCAN clustering (variable K, min_cluster_size=2)
+        4. Convert outliers to singleton clusters
+        5. Compute centroids and select medoid labels
+        6. Persist clusters to database
+
+        **Performance**: Completes in < 5 seconds for 100 participants (SC-001)
+
+      operationId: triggerClustering
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusteringRequest'
+            example:
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              force_recluster: false
+
+      responses:
+        '202':
+          description: Clustering triggered successfully (async operation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusteringResponse'
+              example:
+                job_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+                round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                status: "PROCESSING"
+                estimated_completion_ms: 3600
+                message: "Clustering initiated for 95 approved summaries"
+
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noApprovedSummaries:
+                  summary: No approved summaries in round
+                  value:
+                    error: "NO_APPROVED_SUMMARIES"
+                    message: "Round has no approved summaries. Clustering cannot proceed."
+                    details:
+                      round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                      approved_count: 0
+
+        '409':
+          description: Clustering already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "CLUSTERING_EXISTS"
+                message: "Clustering already computed for this round. Use force_recluster=true to override."
+                details:
+                  round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                  cluster_count: 8
+
+  /clusters:
+    get:
+      tags:
+        - clustering
+      summary: Get thought spaces for a round
+      description: |
+        Returns all thought spaces (clusters) for a specified round.
+
+        **Output Guarantees** (per spec):
+        - 100% participant coverage (SC-003)
+        - User percentages sum to 1.0 ± 0.0001 (SC-005)
+        - Medoid labels from actual participant language (FR-024)
+        - Centroids included for Sankey flow calculation (FR-028)
+
+      operationId: getClusters
+      parameters:
+        - name: round_id
+          in: query
+          required: true
+          description: Round to fetch clusters for
+          schema:
+            type: string
+            format: uuid
+        - name: include_members
+          in: query
+          required: false
+          description: Include member details (default false)
+          schema:
+            type: boolean
+            default: false
+
+      responses:
+        '200':
+          description: Thought spaces for round
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterList'
+              example:
+                round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                cluster_count: 8
+                total_participants: 95
+                percentage_sum: 1.0
+                clusters:
+                  - cluster_id: "c1234567-89ab-cdef-0123-456789abcdef"
+                    user_count: 32
+                    user_pct: 0.337
+                    label_summary: "We need to reduce costs by 20%"
+                    label_summary_id: "s1111111-89ab-cdef-0123-456789abcdef"
+                    display_group_id: "d1234567-89ab-cdef-0123-456789abcdef"
+                    centroid_vector: [0.123, -0.456, 0.789]  # Truncated for example
+                  - cluster_id: "c2345678-89ab-cdef-0123-456789abcdef"
+                    user_count: 28
+                    user_pct: 0.295
+                    label_summary: "Speed improvements are top priority"
+                    label_summary_id: "s2222222-89ab-cdef-0123-456789abcdef"
+                    display_group_id: "d2345678-89ab-cdef-0123-456789abcdef"
+                    centroid_vector: [-0.234, 0.567, -0.890]
+                  - cluster_id: "c3456789-89ab-cdef-0123-456789abcdef"
+                    user_count: 1
+                    user_pct: 0.011
+                    label_summary: "Unique minority view on topic"
+                    label_summary_id: "s3333333-89ab-cdef-0123-456789abcdef"
+                    display_group_id: null
+                    centroid_vector: [0.345, 0.678, 0.123]
+
+        '404':
+          description: Round not found or not yet clustered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clusters/{cluster_id}:
+    get:
+      tags:
+        - clustering
+      summary: Get specific thought space details
+      description: |
+        Returns detailed information about a specific thought space including
+        all member summaries and user IDs.
+
+      operationId: getCluster
+      parameters:
+        - name: cluster_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: Thought space details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterDetail'
+              example:
+                cluster_id: "c1234567-89ab-cdef-0123-456789abcdef"
+                round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                user_count: 32
+                user_pct: 0.337
+                label_summary: "We need to reduce costs by 20%"
+                label_summary_id: "s1111111-89ab-cdef-0123-456789abcdef"
+                centroid_vector: [0.123, -0.456, 0.789]
+                display_group_id: "d1234567-89ab-cdef-0123-456789abcdef"
+                members:
+                  - summary_id: "s1111111-89ab-cdef-0123-456789abcdef"
+                    user_id: "u1234567-89ab-cdef-0123-456789abcdef"
+                    summary_text: "We need to reduce costs by 20%"
+                  - summary_id: "s1111112-89ab-cdef-0123-456789abcdef"
+                    user_id: "u1234568-89ab-cdef-0123-456789abcdef"
+                    summary_text: "Budget cuts are essential"
+
+        '404':
+          description: Cluster not found
+
+  /alignments/trigger:
+    post:
+      tags:
+        - alignment
+      summary: Trigger cross-round alignment
+      description: |
+        Computes alignment between clusters in adjacent rounds (r and r+1) based
+        on centroid similarity.
+
+        **Workflow**:
+        1. Load centroids for rounds r and r+1
+        2. Compute cosine similarity matrix (all pairs)
+        3. Greedy matching (similarity ≥ threshold, default 0.7)
+        4. Assign display group IDs for visual continuity
+        5. Persist alignment maps
+
+        **Guarantees** (FR-037, FR-038, FR-039, SC-009):
+        - Alignment does NOT change cluster membership
+        - Alignment does NOT affect flow calculations
+        - Alignment affects presentation only (colors, labels)
+
+      operationId: triggerAlignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlignmentRequest'
+            example:
+              discussion_id: "d1234567-89ab-cdef-0123-456789abcdef"
+              round_r: 1
+              round_r1: 2
+              similarity_threshold: 0.7
+              force_realign: false
+
+      responses:
+        '202':
+          description: Alignment triggered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlignmentResponse'
+              example:
+                job_id: "a1234567-89ab-cdef-0123-456789abcdef"
+                discussion_id: "d1234567-89ab-cdef-0123-456789abcdef"
+                round_r: 1
+                round_r1: 2
+                status: "PROCESSING"
+                estimated_completion_ms: 500
+
+        '400':
+          description: Invalid alignment request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                nonAdjacentRounds:
+                  summary: Rounds not adjacent
+                  value:
+                    error: "NON_ADJACENT_ROUNDS"
+                    message: "Alignment requires adjacent rounds (r+1). Provided: r=1, r+1=3"
+                    details:
+                      round_r: 1
+                      round_r1: 3
+                roundsNotClustered:
+                  summary: Rounds not yet clustered
+                  value:
+                    error: "ROUNDS_NOT_CLUSTERED"
+                    message: "Both rounds must be clustered before alignment."
+                    details:
+                      round_r_clustered: true
+                      round_r1_clustered: false
+
+  /alignments:
+    get:
+      tags:
+        - alignment
+      summary: Get alignment maps for discussion
+      description: |
+        Returns alignment mappings between clusters across adjacent rounds for
+        a discussion. Used by Sankey visualization for color/label continuity.
+
+      operationId: getAlignments
+      parameters:
+        - name: discussion_id
+          in: query
+          required: true
+          description: Discussion to fetch alignments for
+          schema:
+            type: string
+            format: uuid
+        - name: round_r
+          in: query
+          required: false
+          description: Filter to specific round pair (round r)
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: Alignment maps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlignmentList'
+              example:
+                discussion_id: "d1234567-89ab-cdef-0123-456789abcdef"
+                alignment_count: 12
+                alignments:
+                  - alignment_id: "a1111111-89ab-cdef-0123-456789abcdef"
+                    round_r: 1
+                    round_r1: 2
+                    cluster_r_id: "c1234567-89ab-cdef-0123-456789abcdef"
+                    cluster_r1_id: "c2345678-89ab-cdef-0123-456789abcdef"
+                    similarity_score: 0.85
+                    display_group_id: "d1234567-89ab-cdef-0123-456789abcdef"
+                    alignment_type: "1-to-1"
+                  - alignment_id: "a2222222-89ab-cdef-0123-456789abcdef"
+                    round_r: 1
+                    round_r1: 2
+                    cluster_r_id: "c3456789-89ab-cdef-0123-456789abcdef"
+                    cluster_r1_id: "c4567890-89ab-cdef-0123-456789abcdef"
+                    similarity_score: 0.75
+                    display_group_id: "d2345678-89ab-cdef-0123-456789abcdef"
+                    alignment_type: "1-to-many"
+
+        '404':
+          description: Discussion not found
+
+components:
+  schemas:
+    ClusteringRequest:
+      type: object
+      required:
+        - round_id
+      properties:
+        round_id:
+          type: string
+          format: uuid
+          description: Round to cluster
+        force_recluster:
+          type: boolean
+          default: false
+          description: Force reclustering if already computed
+
+    ClusteringResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          description: Async job identifier
+        round_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+        estimated_completion_ms:
+          type: integer
+          description: Estimated time to completion
+        message:
+          type: string
+
+    ClusterList:
+      type: object
+      properties:
+        round_id:
+          type: string
+          format: uuid
+        cluster_count:
+          type: integer
+          description: Number of thought spaces
+        total_participants:
+          type: integer
+          description: Total participants in round
+        percentage_sum:
+          type: number
+          format: float
+          description: Sum of user_pct (should be 1.0)
+        clusters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cluster'
+
+    Cluster:
+      type: object
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+        user_count:
+          type: integer
+          description: Number of participants in cluster
+        user_pct:
+          type: number
+          format: float
+          description: Percentage of total participants (0-1)
+        label_summary:
+          type: string
+          description: Medoid summary text (actual participant language)
+        label_summary_id:
+          type: string
+          format: uuid
+          description: Summary ID of medoid
+        display_group_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Visual grouping ID (from alignment, null if not aligned)
+        centroid_vector:
+          type: array
+          items:
+            type: number
+            format: float
+          description: 384-dimensional centroid vector
+
+    ClusterDetail:
+      allOf:
+        - $ref: '#/components/schemas/Cluster'
+        - type: object
+          properties:
+            round_id:
+              type: string
+              format: uuid
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  summary_id:
+                    type: string
+                    format: uuid
+                  user_id:
+                    type: string
+                    format: uuid
+                  summary_text:
+                    type: string
+
+    AlignmentRequest:
+      type: object
+      required:
+        - discussion_id
+        - round_r
+        - round_r1
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        round_r:
+          type: integer
+          description: Earlier round number
+        round_r1:
+          type: integer
+          description: Later round number (must be r+1)
+        similarity_threshold:
+          type: number
+          format: float
+          default: 0.7
+          description: Minimum cosine similarity for alignment
+        force_realign:
+          type: boolean
+          default: false
+          description: Force realignment if already computed
+
+    AlignmentResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        discussion_id:
+          type: string
+          format: uuid
+        round_r:
+          type: integer
+        round_r1:
+          type: integer
+        status:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+        estimated_completion_ms:
+          type: integer
+
+    AlignmentList:
+      type: object
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        alignment_count:
+          type: integer
+        alignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alignment'
+
+    Alignment:
+      type: object
+      properties:
+        alignment_id:
+          type: string
+          format: uuid
+        round_r:
+          type: integer
+        round_r1:
+          type: integer
+        cluster_r_id:
+          type: string
+          format: uuid
+        cluster_r1_id:
+          type: string
+          format: uuid
+        similarity_score:
+          type: number
+          format: float
+          description: Cosine similarity between centroids (0-1)
+        display_group_id:
+          type: string
+          format: uuid
+          description: Visual grouping ID for aligned clusters
+        alignment_type:
+          type: string
+          enum: ["1-to-1", "1-to-many", "many-to-1"]
+          description: Alignment pattern (continuity, split, merge)
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - NO_APPROVED_SUMMARIES
+            - CLUSTERING_EXISTS
+            - NON_ADJACENT_ROUNDS
+            - ROUNDS_NOT_CLUSTERED
+            - CLUSTERING_FAILED
+            - ALIGNMENT_FAILED
+        message:
+          type: string
+          description: User-visible error message
+        details:
+          type: object
+          additionalProperties: true
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authenticated requests
+
+security:
+  - bearerAuth: []

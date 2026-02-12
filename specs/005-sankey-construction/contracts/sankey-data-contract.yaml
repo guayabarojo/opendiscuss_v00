@@ -1,0 +1,320 @@
+openapi: 3.0.3
+info:
+  title: Sankey Data Contract
+  description: |
+    Complete JSON schema for SankeyGraph and related entities. This contract defines
+    the canonical data structure for Sankey diagrams in OpenDiscuss. All consumers
+    (backend services, frontend visualization, test fixtures) MUST conform to this schema.
+
+    This is a pure data contract (no endpoints) - import these schemas into other APIs
+    or use for validation.
+  version: 1.0.0
+
+components:
+  schemas:
+    SankeyGraph:
+      type: object
+      required:
+        - discussion_id
+        - rounds
+        - columns
+        - edges
+        - created_at
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the discussion
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        rounds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+          description: Ordered list of round indices (e.g., [1, 2, 3])
+          minItems: 1
+          example: [1, 2, 3]
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Column'
+          description: Ordered list of columns (one per round)
+          minItems: 1
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+          description: List of all flows between adjacent columns
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when Sankey was constructed
+          example: "2026-01-29T15:30:00Z"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Optional metadata (e.g., construction time, version)
+          example:
+            construction_time_ms: 250
+            total_participants: 50
+            spec_version: "005-v1.0"
+
+    Column:
+      type: object
+      required:
+        - round_index
+        - nodes
+      properties:
+        round_index:
+          type: integer
+          minimum: 1
+          description: 1-based round number
+          example: 2
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+          description: All thought space nodes for this round
+          minItems: 1
+        total_participants:
+          type: integer
+          minimum: 0
+          description: Derived sum of node user_counts
+          example: 30
+
+    Node:
+      type: object
+      required:
+        - node_id
+        - cluster_id
+        - label_summary
+        - user_count
+        - user_pct
+      properties:
+        node_id:
+          type: string
+          description: |
+            Unique node identifier following pattern: n_r{round}_c{cluster}
+            Example: "n_r2_c8" means round 2, cluster 8
+          pattern: '^n_r\d+_c\d+$'
+          example: "n_r2_c8"
+        cluster_id:
+          type: string
+          description: Cluster ID from Spec 4 (maps to ThoughtSpace)
+          example: "cluster_8"
+        label_summary:
+          type: string
+          minLength: 1
+          description: |
+            Exact label from Spec 4 (medoid summary text). This is the participant-approved
+            summary that represents the thought space. MUST NOT be empty or null.
+          example: "Hybrid work model with 2-3 days in office"
+        user_count:
+          type: integer
+          minimum: 1
+          description: Number of participants in this thought space (at least 1)
+          example: 15
+        user_pct:
+          type: number
+          format: float
+          minimum: 0.0
+          exclusiveMinimum: true
+          maximum: 1.0
+          description: |
+            Percentage of round's total participants (0.0 < user_pct <= 1.0).
+            Example: 0.50 means 50% of participants in this round are in this cluster.
+          example: 0.50
+        display_group_id:
+          type: string
+          nullable: true
+          description: |
+            Optional alignment group ID from Spec 4 (for color continuity across rounds).
+            If present, aligned clusters across rounds share the same display_group_id.
+            If null, cluster has no cross-round alignment.
+          example: "dg_12"
+
+    Edge:
+      type: object
+      required:
+        - from_round_index
+        - to_round_index
+        - from_cluster_id
+        - to_cluster_id
+        - user_count
+      properties:
+        from_round_index:
+          type: integer
+          minimum: 1
+          description: Source round
+          example: 1
+        to_round_index:
+          type: integer
+          minimum: 1
+          description: |
+            Target round (must be from_round_index + 1). Edges only connect
+            adjacent rounds (no skipping rounds).
+          example: 2
+        from_cluster_id:
+          type: string
+          description: Source cluster ID
+          example: "cluster_5"
+        to_cluster_id:
+          type: string
+          description: Target cluster ID
+          example: "cluster_8"
+        user_count:
+          type: integer
+          minimum: 1
+          description: |
+            Number of participants making this transition (at least 1).
+            This is the count of users who were assigned to from_cluster_id in
+            from_round_index and to_cluster_id in to_round_index.
+          example: 10
+        pct_of_from:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          nullable: true
+          description: |
+            Optional derived metric: percentage of source cluster.
+            Formula: user_count / from_node.user_count
+            Example: 0.67 means 67% of the source cluster moved to this target
+          example: 0.67
+        pct_of_to:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          nullable: true
+          description: |
+            Optional derived metric: percentage of target cluster.
+            Formula: user_count / to_node.user_count
+            Example: 0.67 means 67% of the target cluster came from this source
+          example: 0.67
+
+    # Supporting schemas for validation examples
+
+    ValidationExample_MinimalSingleRound:
+      description: Minimal valid Sankey with 1 round, 2 nodes, 0 edges
+      type: object
+      example:
+        discussion_id: "550e8400-e29b-41d4-a716-446655440000"
+        rounds: [1]
+        columns:
+          - round_index: 1
+            nodes:
+              - node_id: "n_r1_c1"
+                cluster_id: "cluster_1"
+                label_summary: "Remote work flexibility"
+                user_count: 15
+                user_pct: 0.60
+                display_group_id: null
+              - node_id: "n_r1_c2"
+                cluster_id: "cluster_2"
+                label_summary: "Office-first culture"
+                user_count: 10
+                user_pct: 0.40
+                display_group_id: null
+            total_participants: 25
+        edges: []
+        created_at: "2026-01-29T15:30:00Z"
+
+    ValidationExample_TwoRoundsWithMovement:
+      description: Valid Sankey with 2 rounds, movement, and dropout
+      type: object
+      example:
+        discussion_id: "550e8400-e29b-41d4-a716-446655440000"
+        rounds: [1, 2]
+        columns:
+          - round_index: 1
+            nodes:
+              - node_id: "n_r1_c1"
+                cluster_id: "cluster_1"
+                label_summary: "Remote work flexibility"
+                user_count: 20
+                user_pct: 0.67
+                display_group_id: "dg_10"
+              - node_id: "n_r1_c2"
+                cluster_id: "cluster_2"
+                label_summary: "Office-first culture"
+                user_count: 10
+                user_pct: 0.33
+                display_group_id: null
+            total_participants: 30
+          - round_index: 2
+            nodes:
+              - node_id: "n_r2_c3"
+                cluster_id: "cluster_3"
+                label_summary: "Hybrid work model"
+                user_count: 18
+                user_pct: 0.64
+                display_group_id: "dg_10"
+              - node_id: "n_r2_c4"
+                cluster_id: "cluster_4"
+                label_summary: "Office-first with remote exceptions"
+                user_count: 10
+                user_pct: 0.36
+                display_group_id: null
+            total_participants: 28
+        edges:
+          - from_round_index: 1
+            to_round_index: 2
+            from_cluster_id: "cluster_1"
+            to_cluster_id: "cluster_3"
+            user_count: 15
+            pct_of_from: 0.75
+            pct_of_to: 0.83
+          - from_round_index: 1
+            to_round_index: 2
+            from_cluster_id: "cluster_1"
+            to_cluster_id: "cluster_4"
+            user_count: 3
+            pct_of_from: 0.15
+            pct_of_to: 0.30
+          - from_round_index: 1
+            to_round_index: 2
+            from_cluster_id: "cluster_2"
+            to_cluster_id: "cluster_3"
+            user_count: 3
+            pct_of_from: 0.30
+            pct_of_to: 0.17
+          - from_round_index: 1
+            to_round_index: 2
+            from_cluster_id: "cluster_2"
+            to_cluster_id: "cluster_4"
+            user_count: 7
+            pct_of_from: 0.70
+            pct_of_to: 0.70
+        created_at: "2026-01-29T15:30:00Z"
+        metadata:
+          construction_time_ms: 180
+          total_participants: 30
+          dropout_count: 2
+
+    ValidationInvariants:
+      description: |
+        Invariants that MUST be validated for every SankeyGraph:
+
+        1. Percentage Sum Invariant:
+           For each column, sum(node.user_pct) must equal 1.0 (±0.0001 tolerance)
+
+        2. Edge Total Invariant:
+           For each round transition (r, r+1), sum(edge.user_count where from_round == r)
+           must equal the number of continuing users (users present in both rounds)
+
+        3. Coverage Invariant:
+           Every participant in a round is assigned to exactly one node
+
+        4. Determinism Invariant:
+           Same cluster assignments produce identical SankeyGraph
+
+        5. Adjacency Invariant:
+           All edges must connect adjacent rounds only (to_round == from_round + 1)
+
+        6. Node Uniqueness Invariant:
+           All node_id values must be unique across all columns
+
+        7. Edge Validity Invariant:
+           Every edge must reference valid cluster_ids that exist in the from/to columns
+      type: object

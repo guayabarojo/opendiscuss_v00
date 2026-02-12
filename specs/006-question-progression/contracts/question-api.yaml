@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: OpenDiscuss Question Progression API
+  description: Question sequencing and auto-generation for discussion rounds
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Team
+
+servers:
+  - url: https://api.opendiscuss.example/v1
+    description: Production
+  - url: http://localhost:8000/v1
+    description: Development
+
+tags:
+  - name: questions
+    description: Question management and validation
+  - name: sequences
+    description: Question sequence operations
+  - name: auto-generation
+    description: Autonomous question generation from Sankey patterns
+
+paths:
+  /discussions/{discussion_id}/questions:
+    get:
+      tags: [questions]
+      summary: List all questions for discussion
+      operationId: listQuestions
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of questions in order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Question'
+                  mode:
+                    type: string
+                    enum: [HOST_DEFINED, AUTO_GENERATED]
+                  total_questions:
+                    type: integer
+                    nullable: true
+                    description: Fixed count (HOST mode) or NULL (AUTO mode)
+                  current_index:
+                    type: integer
+                    description: 0-based index of current question
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [questions]
+      summary: Add question to sequence (manual entry fallback)
+      description: Used when auto-generation fails or host provides manual question in AUTO mode
+      operationId: addQuestion
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question_text]
+              properties:
+                question_text:
+                  type: string
+                  minLength: 10
+                  maxLength: 200
+                  example: "What constraints are limiting progress?"
+      responses:
+        '201':
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Question'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          description: Cannot add questions in HOST_DEFINED mode after creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /questions/{question_id}:
+    get:
+      tags: [questions]
+      summary: Get question details
+      operationId: getQuestion
+      parameters:
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Question details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionWithProvenance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /questions/{question_id}/validate:
+    post:
+      tags: [questions]
+      summary: Validate question text (pre-check before creation)
+      operationId: validateQuestion
+      parameters:
+        - name: question_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question_text]
+              properties:
+                question_text:
+                  type: string
+                  minLength: 10
+                  maxLength: 200
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+
+  /sequences/{sequence_id}:
+    get:
+      tags: [sequences]
+      summary: Get question sequence details
+      operationId: getSequence
+      parameters:
+        - name: sequence_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sequence details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionSequence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auto-generation/generate:
+    post:
+      tags: [auto-generation]
+      summary: Trigger autonomous question generation
+      description: Called internally by event handler when Sankey completes (not exposed to clients)
+      operationId: generateQuestion
+      security:
+        - internalServiceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateQuestionRequest'
+      responses:
+        '201':
+          description: Question generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateQuestionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          description: Generation failed after max retries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationFailure'
+
+  /auto-generation/status/{round_id}:
+    get:
+      tags: [auto-generation]
+      summary: Get auto-generation status for round
+      operationId: getGenerationStatus
+      parameters:
+        - name: round_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Generation status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Question:
+      type: object
+      required:
+        - question_id
+        - sequence_id
+        - order
+        - question_text
+        - mode
+        - validation_status
+        - created_at
+      properties:
+        question_id:
+          type: string
+          format: uuid
+        sequence_id:
+          type: string
+          format: uuid
+        order:
+          type: integer
+          minimum: 1
+          description: Sequential order (1-indexed)
+        question_text:
+          type: string
+          minLength: 10
+          maxLength: 200
+          example: "What challenges are most pressing?"
+        mode:
+          type: string
+          enum: [HOST_DEFINED, AUTO_GENERATED]
+        validation_status:
+          type: string
+          enum: [VALID, REJECTED, PENDING]
+        created_at:
+          type: string
+          format: date-time
+        immutable_since:
+          type: string
+          format: date-time
+          nullable: true
+          description: Set when round starts (question becomes immutable)
+
+    QuestionWithProvenance:
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          properties:
+            provenance:
+              $ref: '#/components/schemas/QuestionProvenance'
+              nullable: true
+              description: Only present for AUTO_GENERATED questions
+
+    QuestionProvenance:
+      type: object
+      required:
+        - provenance_id
+        - question_id
+        - generation_timestamp
+        - generation_latency_ms
+        - input_sankey_hash
+        - input_round_id
+        - llm_model
+        - prompt_tokens
+        - completion_tokens
+        - retry_count
+        - validation_attempts
+      properties:
+        provenance_id:
+          type: string
+          format: uuid
+        question_id:
+          type: string
+          format: uuid
+        generation_timestamp:
+          type: string
+          format: date-time
+        generation_latency_ms:
+          type: number
+          format: float
+          minimum: 0
+          example: 2847.3
+        input_sankey_hash:
+          type: string
+          minLength: 64
+          maxLength: 64
+          description: SHA-256 hash of Sankey JSON (reproducibility)
+          example: "a3c5b8f2e1d4c7b9a1e3f5c8d2b4e6a7c9b1d3f5e7a9b2c4d6e8f1a3c5b7d9e1"
+        input_round_id:
+          type: string
+          format: uuid
+          description: Round whose Sankey triggered generation
+        llm_model:
+          type: string
+          maxLength: 100
+          example: "claude-sonnet-4-5-20250929"
+        prompt_tokens:
+          type: integer
+          minimum: 0
+        completion_tokens:
+          type: integer
+          minimum: 0
+        retry_count:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: Number of API retry attempts
+        validation_attempts:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: Number of validation retry attempts
+        previous_questions_count:
+          type: integer
+          minimum: 0
+          description: Number of prior questions in context
+
+    QuestionSequence:
+      type: object
+      required:
+        - sequence_id
+        - discussion_id
+        - mode
+        - current_index
+        - completion_status
+        - created_at
+      properties:
+        sequence_id:
+          type: string
+          format: uuid
+        discussion_id:
+          type: string
+          format: uuid
+        mode:
+          type: string
+          enum: [HOST_DEFINED, AUTO_GENERATED]
+        total_questions:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 10
+          description: Fixed count (HOST mode only), NULL in AUTO mode
+        current_index:
+          type: integer
+          minimum: 0
+          description: 0-based index of current question
+        completion_status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED, TERMINATED]
+        created_at:
+          type: string
+          format: date-time
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+          description: Ordered list of questions (may be partial in AUTO mode)
+
+    ValidationResult:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+        validated_text:
+          type: string
+          nullable: true
+          description: Normalized text if valid
+        error:
+          type: string
+          nullable: true
+          description: Specific error message if invalid
+        error_code:
+          type: string
+          nullable: true
+          enum:
+            - LENGTH_INVALID
+            - OPENING_INVALID
+            - PROHIBITED_OPENING
+            - RANKING_DETECTED
+            - BINARY_CHOICE
+      example:
+        valid: false
+        error: "Question must start with 'What' or 'How'"
+        error_code: "OPENING_INVALID"
+
+    GenerateQuestionRequest:
+      type: object
+      required:
+        - discussion_id
+        - round_id
+        - sankey_graph
+        - previous_questions
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+          description: Round that just completed (N generates N+1 question)
+        sankey_graph:
+          $ref: '#/components/schemas/SankeyGraph'
+        previous_questions:
+          type: array
+          items:
+            type: string
+          description: All questions asked so far (in order)
+          example: ["What challenges are most pressing?", "How could funding gaps be addressed?"]
+
+    SankeyGraph:
+      type: object
+      required:
+        - columns
+        - flows
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyColumn'
+          description: Ordered list of rounds (columns in diagram)
+        flows:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyFlow'
+          description: Participant movement between thought spaces
+
+    SankeyColumn:
+      type: object
+      required:
+        - round_num
+        - nodes
+      properties:
+        round_num:
+          type: integer
+          minimum: 1
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SankeyNode'
+
+    SankeyNode:
+      type: object
+      required:
+        - cluster_id
+        - label_summary
+        - member_count
+        - member_pct
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+        label_summary:
+          type: string
+          maxLength: 200
+          description: Medoid text (actual participant language)
+        member_count:
+          type: integer
+          minimum: 1
+        member_pct:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+
+    SankeyFlow:
+      type: object
+      required:
+        - source_cluster_id
+        - target_cluster_id
+        - participant_count
+      properties:
+        source_cluster_id:
+          type: string
+          format: uuid
+        target_cluster_id:
+          type: string
+          format: uuid
+        participant_count:
+          type: integer
+          minimum: 1
+
+    GenerateQuestionResponse:
+      type: object
+      required:
+        - question_id
+        - question_text
+        - provenance_id
+        - next_round_status
+      properties:
+        question_id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+          minLength: 10
+          maxLength: 200
+        provenance_id:
+          type: string
+          format: uuid
+        next_round_status:
+          type: string
+          enum: [QUESTION_READY]
+          description: Next round status after generation
+
+    GenerationFailure:
+      type: object
+      required:
+        - discussion_id
+        - round_id
+        - error
+        - retry_count
+        - fallback_action
+      properties:
+        discussion_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+        error:
+          type: string
+          description: Reason for failure
+        retry_count:
+          type: integer
+          description: Number of retries attempted
+        fallback_action:
+          type: string
+          enum: [MANUAL_ENTRY_REQUIRED]
+          description: Next step for host
+
+    GenerationStatus:
+      type: object
+      required:
+        - round_id
+        - status
+      properties:
+        round_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - COMPLETED
+            - FAILED
+        question_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Present if status=COMPLETED
+        error:
+          type: string
+          nullable: true
+          description: Present if status=FAILED
+        generation_latency_ms:
+          type: number
+          format: float
+          nullable: true
+          description: Present if status=COMPLETED or FAILED
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "NOT_FOUND"
+            message: "Question not found"
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "VALIDATION_ERROR"
+            message: "Question must start with 'What' or 'How'"
+            details:
+              error_code: "OPENING_INVALID"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    internalServiceToken:
+      type: apiKey
+      in: header
+      name: X-Internal-Service-Token
+      description: Internal service-to-service authentication (not exposed to clients)
+
+security:
+  - bearerAuth: []

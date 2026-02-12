@@ -1,0 +1,192 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "OpenDiscuss" [level=1] [ref=e5]
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - heading "Discussion Flow Visualization" [level=1] [ref=e10]
+          - paragraph [ref=e11]: Participant movement across 10 rounds
+        - button "🔍 Inspect Clustering" [active] [ref=e12] [cursor=pointer]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: "Discussion ID:"
+          - generic [ref=e16]: 824d3126-66f6-42e8-a61a-115c502dcd2f
+        - generic [ref=e17]:
+          - generic [ref=e18]: "Total Rounds:"
+          - generic [ref=e19]: "10"
+        - generic [ref=e20]:
+          - generic [ref=e21]: "Initial Participants:"
+          - generic [ref=e22]: "95"
+        - generic [ref=e23]:
+          - generic [ref=e24]: "Final Participants:"
+          - generic [ref=e25]: "100"
+        - generic [ref=e26]:
+          - generic [ref=e27]: "Dropout Rate:"
+          - generic [ref=e28]: "-5.3%"
+        - generic [ref=e29]:
+          - generic [ref=e30]: "Created:"
+          - generic [ref=e31]: 2/6/2026, 11:06:05 PM
+        - generic [ref=e32]:
+          - generic [ref=e33]: "Construction Time:"
+          - generic [ref=e34]: 68ms
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - strong [ref=e37]: "Cluster Detail Level:"
+          - generic [ref=e38]: Clusters with 5+ participants shown separately, smaller ones grouped as "Other"
+        - 'slider "Cluster Detail Level: Clusters with 5+ participants shown separately, smaller ones grouped as \"Other\"" [ref=e39]': "5"
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - text: Maximum Detail
+            - text: (All clusters)
+          - generic [ref=e42]:
+            - text: Balanced
+            - text: (Group smallest)
+          - generic [ref=e43]:
+            - text: High Level
+            - text: (Group smaller clusters)
+        - generic [ref=e44]: ℹ️ All 95 participants are always represented at every detail level
+      - img "Sankey diagram showing participant distribution and movement across rounds" [ref=e47]:
+        - generic [ref=e48]:
+          - generic "What are the most important ethical principles that should guide AI development?" [ref=e50]
+          - generic "How can we ensure AI systems remain transparent and accountable to society?" [ref=e52]
+          - generic "What role should government regulation play in AI development and deployment?" [ref=e54]
+          - generic "How might AI impact employment and economic inequality over the next decade?" [ref=e56]
+          - generic "What safeguards are needed to prevent AI bias and discrimination?" [ref=e58]
+          - generic "How should we balance AI innovation with privacy rights and data protection?" [ref=e60]
+          - generic "What are the risks and benefits of AI in critical infrastructure and healthcare?" [ref=e62]
+          - generic "How can we ensure AI development benefits all of humanity, not just wealthy nations?" [ref=e64]
+          - generic "What educational changes are needed to prepare society for an AI-driven future?" [ref=e66]
+          - generic "How should we approach the development of artificial general intelligence (AGI)?" [ref=e68]
+          - generic [ref=e196] [cursor=pointer]:
+            - generic: Excessive regulation can be...
+            - generic: "87"
+          - generic [ref=e198] [cursor=pointer]:
+            - generic: Other clusters (8 smaller...
+            - generic: "8"
+          - generic [ref=e200] [cursor=pointer]:
+            - generic: I believe excessive regulation...
+            - generic: "39"
+          - generic [ref=e202] [cursor=pointer]:
+            - generic: I believe building on...
+            - generic: "34"
+          - generic [ref=e204] [cursor=pointer]:
+            - generic: We should proceed cautiously...
+            - generic: "9"
+          - generic [ref=e206] [cursor=pointer]:
+            - generic: Other clusters (13 smaller...
+            - generic: "14"
+          - generic [ref=e208] [cursor=pointer]:
+            - generic: I believe building on...
+            - generic: "34"
+          - generic [ref=e210] [cursor=pointer]:
+            - generic: I believe excessive regulation...
+            - generic: "25"
+          - generic [ref=e212] [cursor=pointer]:
+            - generic: I believe building on...
+            - generic: "9"
+          - generic [ref=e214] [cursor=pointer]:
+            - generic: We should proceed cautiously...
+            - generic: "8"
+          - generic [ref=e216] [cursor=pointer]:
+            - generic: Other clusters (19 smaller...
+            - generic: "21"
+          - generic [ref=e218] [cursor=pointer]:
+            - generic: Excessive regulation can be...
+            - generic: "82"
+          - generic [ref=e220] [cursor=pointer]:
+            - generic: Other clusters (12 smaller...
+            - generic: "16"
+          - generic [ref=e222] [cursor=pointer]:
+            - generic: Building on previous discussions...
+            - generic: "60"
+          - generic [ref=e224] [cursor=pointer]:
+            - generic: Independent audits should be...
+            - generic: "5"
+          - generic [ref=e226] [cursor=pointer]:
+            - generic: Other clusters (26 smaller...
+            - generic: "31"
+          - generic [ref=e228] [cursor=pointer]:
+            - generic: Excessive regulation can be...
+            - generic: "91"
+          - generic [ref=e230] [cursor=pointer]:
+            - generic: Other clusters (8 smaller...
+            - generic: "8"
+          - generic [ref=e232] [cursor=pointer]:
+            - generic: Building on previous discussions...
+            - generic: "51"
+          - generic [ref=e234] [cursor=pointer]:
+            - generic: Other clusters (34 smaller...
+            - generic: "49"
+          - generic [ref=e236] [cursor=pointer]:
+            - generic: I believe excessive regulation...
+            - generic: "44"
+          - generic [ref=e238] [cursor=pointer]:
+            - generic: Other clusters (48 smaller...
+            - generic: "54"
+          - generic [ref=e240] [cursor=pointer]:
+            - generic: Building on previous discussions...
+            - generic: "78"
+          - generic [ref=e242] [cursor=pointer]:
+            - generic: Other clusters (14 smaller...
+            - generic: "19"
+          - generic [ref=e244] [cursor=pointer]:
+            - generic: Building on previous discussions...
+            - generic: "47"
+          - generic [ref=e246] [cursor=pointer]:
+            - generic: Independent audits should be...
+            - generic: "7"
+          - generic [ref=e248] [cursor=pointer]:
+            - generic: I believe building on...
+            - generic: "5"
+          - generic [ref=e250] [cursor=pointer]:
+            - generic: Other clusters (36 smaller...
+            - generic: "41"
+          - generic [ref=e252]: 95 participants
+          - generic [ref=e253]: 96 participants
+          - generic [ref=e254]: 97 participants
+          - generic [ref=e255]: 98 participants
+          - generic [ref=e256]: 96 participants
+          - generic [ref=e257]: 99 participants
+          - generic [ref=e258]: 100 participants
+          - generic [ref=e259]: 98 participants
+          - generic [ref=e260]: 97 participants
+          - generic [ref=e261]: 100 participants
+      - generic [ref=e262]:
+        - heading "How to Read This Diagram" [level=3] [ref=e263]
+        - list [ref=e264]:
+          - listitem [ref=e265]:
+            - strong [ref=e266]: "Columns:"
+            - text: Each vertical column represents one discussion round
+          - listitem [ref=e267]:
+            - strong [ref=e268]: "Nodes (Rectangles):"
+            - text: Each rectangle represents a cluster of similar participant responses (thought space)
+          - listitem [ref=e269]:
+            - strong [ref=e270]: "Node Height:"
+            - text: The height of each node is proportional to the percentage of participants in that cluster
+          - listitem [ref=e271]:
+            - strong [ref=e272]: "Edges (Flows):"
+            - text: Curved lines between nodes show participant movement between clusters across rounds
+          - listitem [ref=e273]:
+            - strong [ref=e274]: "Edge Width:"
+            - text: The width of each flow is proportional to the number of participants who made that transition
+          - listitem [ref=e275]:
+            - strong [ref=e276]: "Colors:"
+            - text: Node colors indicate alignment groups across rounds (same topic/theme maintained across rounds)
+          - listitem [ref=e277]:
+            - strong [ref=e278]: "Hover:"
+            - text: Hover over any node or edge to see detailed information and participant counts
+        - paragraph [ref=e279]: "Tip: The diagram naturally narrows if participants drop out between rounds, providing an honest view of engagement over time."
+      - generic [ref=e285]:
+        - generic [ref=e286]:
+          - generic [ref=e287]:
+            - heading "🔍 Clustering Inspector" [level=2] [ref=e288]
+            - paragraph [ref=e289]: Inspect clustering quality and participant assignments
+          - button "×" [ref=e290]
+        - paragraph [ref=e292]: "⚠️ Developer Tool: This shows anonymous participant data for debugging purposes"
+        - generic [ref=e294]:
+          - text: Select Round
+          - combobox [ref=e295]
+  - button "👤 No User" [ref=e281] [cursor=pointer]:
+    - generic [ref=e282]: 👤
+    - generic [ref=e283]: No User

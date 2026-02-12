@@ -1,0 +1,94 @@
+# Ruff configuration for OpenDiscuss backend
+
+# Target Python 3.11
+target-version = "py311"
+
+# Line length to match Black
+line-length = 100
+
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "G",   # flake8-logging-format
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RSE", # flake8-raise
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate (commented-out code)
+    "PL",  # Pylint
+    "RUF", # Ruff-specific rules
+]
+
+# Rules to ignore
+ignore = [
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
+    "ANN401", # Dynamically typed expressions (Any) allowed
+    "COM812", # Trailing comma missing (conflicts with formatter)
+    "ISC001", # Implicit string concatenation (conflicts with formatter)
+]
+
+# Exclude directories
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "alembic/versions",
+]
+
+[per-file-ignores]
+# Tests can use assertions and relative imports
+"tests/**/*.py" = ["S101", "TID252", "ANN201", "ANN001", "PLR2004"]
+# Alembic migrations can use exec and star imports
+"alembic/**/*.py" = ["F401", "F403", "F405"]
+# __init__.py files can have unused imports
+"**/__init__.py" = ["F401"]
+
+[isort]
+known-first-party = ["src"]
+
+[mccabe]
+# Max cyclomatic complexity
+max-complexity = 10
+
+[pylint]
+max-args = 6
+max-branches = 12
+max-returns = 6
+max-statements = 50

@@ -1,0 +1,319 @@
+asyncapi: 2.6.0
+info:
+  title: Clustering & Alignment Protocol Events
+  version: 1.0.0
+  description: |
+    Event contracts for Clustering & Alignment Protocol (Spec 004) integration.
+
+    **Event Flow**:
+    - Spec 3 → Spec 4: `summaries.approved_for_round` (trigger clustering)
+    - Spec 4 → Spec 5: `clustering.completed` (thought spaces ready for Sankey)
+    - Spec 4 → Spec 5: `alignment.completed` (display groups ready for continuity)
+
+channels:
+  summaries.approved_for_round:
+    description: |
+      Published when all summaries for a round are approved (Spec 3).
+      Subscribers: Spec 4 (triggers clustering)
+
+    subscribe:
+      summary: All summaries approved, ready for clustering
+      operationId: onSummariesApprovedForRound
+      message:
+        $ref: '#/components/messages/SummariesApprovedForRound'
+
+  clustering.completed:
+    description: |
+      Published when clustering completes for a round (Spec 4).
+      Subscribers: Spec 5 (Sankey Construction can proceed)
+
+    subscribe:
+      summary: Clustering complete, thought spaces available
+      operationId: onClusteringCompleted
+      message:
+        $ref: '#/components/messages/ClusteringCompleted'
+
+  alignment.completed:
+    description: |
+      Published when cross-round alignment completes (Spec 4).
+      Subscribers: Spec 5 (display groups available for visual continuity)
+
+    subscribe:
+      summary: Alignment complete, display groups assigned
+      operationId: onAlignmentCompleted
+      message:
+        $ref: '#/components/messages/AlignmentCompleted'
+
+components:
+  messages:
+    SummariesApprovedForRound:
+      name: SummariesApprovedForRound
+      title: Summaries Approved For Round Event
+      summary: All summaries in a round have been approved (from Spec 3)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SummariesApprovedPayload'
+      examples:
+        - name: round1Complete
+          summary: Round 1 summaries all approved
+          payload:
+            event_id: "e1f2g3h4-5678-90ab-cdef-1234567890ab"
+            event_type: "summaries.approved_for_round"
+            timestamp: "2026-01-29T14:10:00.000Z"
+            data:
+              round_id: "r1234567-89ab-cdef-0123-456789abcdef"
+              summary_count: 95
+              all_approved: true
+              completed_at: "2026-01-29T14:10:00.000Z"
+
+    ClusteringCompleted:
+      name: ClusteringCompleted
+      title: Clustering Completed Event
+      summary: Clustering finished for a round, thought spaces created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ClusteringCompletedPayload'
+      examples:
+        - name: round1Clustered
+          summary: Round 1 clustering complete
+          payload:
+            event_id: "f2g3h4i5-5678-90ab-cdef-1234567890bc"
+            event_type: "clustering.completed"
+            timestamp: "2026-01-29T14:10:03.600Z"
+            data:
+              round_id: "r1234567-89ab-cdef-0123-456789abcdef"
+              cluster_count: 8
+              total_participants: 95
+              singleton_count: 2
+              processing_time_ms: 3600
+              completed_at: "2026-01-29T14:10:03.600Z"
+
+    AlignmentCompleted:
+      name: AlignmentCompleted
+      title: Alignment Completed Event
+      summary: Cross-round alignment finished, display groups assigned
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AlignmentCompletedPayload'
+      examples:
+        - name: round1to2Aligned
+          summary: Round 1→2 alignment complete
+          payload:
+            event_id: "g3h4i5j6-5678-90ab-cdef-1234567890cd"
+            event_type: "alignment.completed"
+            timestamp: "2026-01-29T14:15:04.100Z"
+            data:
+              discussion_id: "d1234567-89ab-cdef-0123-456789abcdef"
+              round_r: 1
+              round_r1: 2
+              match_count: 6
+              similarity_threshold: 0.7
+              processing_time_ms: 500
+              completed_at: "2026-01-29T14:15:04.100Z"
+
+  schemas:
+    SummariesApprovedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Unique event identifier for idempotency
+        event_type:
+          type: string
+          const: "summaries.approved_for_round"
+        timestamp:
+          type: string
+          format: date-time
+          description: Event publication time
+        data:
+          type: object
+          required:
+            - round_id
+            - summary_count
+            - all_approved
+            - completed_at
+          properties:
+            round_id:
+              type: string
+              format: uuid
+              description: Round that completed approval
+            summary_count:
+              type: integer
+              description: Number of approved summaries (= participants)
+            all_approved:
+              type: boolean
+              description: Always true (event only fires when all approved)
+            completed_at:
+              type: string
+              format: date-time
+              description: When last summary was approved
+
+    ClusteringCompletedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: "clustering.completed"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - round_id
+            - cluster_count
+            - total_participants
+            - singleton_count
+            - processing_time_ms
+            - completed_at
+          properties:
+            round_id:
+              type: string
+              format: uuid
+              description: Round that was clustered
+            cluster_count:
+              type: integer
+              description: Number of thought spaces created
+            total_participants:
+              type: integer
+              description: Total participants (should match summary_count from trigger event)
+            singleton_count:
+              type: integer
+              description: Number of singleton clusters (outliers converted)
+            processing_time_ms:
+              type: integer
+              description: Clustering duration (embedding + HDBSCAN + medoid + persist)
+            completed_at:
+              type: string
+              format: date-time
+              description: Clustering completion timestamp
+            cluster_ids:
+              type: array
+              items:
+                type: string
+                format: uuid
+              description: List of created cluster IDs (for reference)
+
+    AlignmentCompletedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: "alignment.completed"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - discussion_id
+            - round_r
+            - round_r1
+            - match_count
+            - similarity_threshold
+            - processing_time_ms
+            - completed_at
+          properties:
+            discussion_id:
+              type: string
+              format: uuid
+              description: Discussion context
+            round_r:
+              type: integer
+              description: Earlier round number
+            round_r1:
+              type: integer
+              description: Later round number (r+1)
+            match_count:
+              type: integer
+              description: Number of cluster pairs aligned (≥ threshold)
+            similarity_threshold:
+              type: number
+              format: float
+              description: Threshold used (e.g., 0.7)
+            processing_time_ms:
+              type: integer
+              description: Alignment computation duration
+            completed_at:
+              type: string
+              format: date-time
+            display_group_count:
+              type: integer
+              description: Number of unique display groups assigned
+
+externalDocs:
+  description: OpenDiscuss Protocol Suite Index
+  url: https://github.com/opendiscuss/protocol-suite
+
+servers:
+  development:
+    url: localhost:6379
+    protocol: redis
+    description: Local Redis for pub/sub (MVP)
+
+  production:
+    url: redis.example.com:6379
+    protocol: redis
+    description: Production event bus
+
+tags:
+  - name: spec-3-to-spec-4
+    description: Events from Summarization to Clustering
+  - name: spec-4-to-spec-5
+    description: Events from Clustering to Sankey Construction
+
+operations:
+  onSummariesApprovedForRound:
+    summary: Trigger clustering workflow
+    tags:
+      - spec-3-to-spec-4
+    message:
+      $ref: '#/components/messages/SummariesApprovedForRound'
+    bindings:
+      redis:
+        channel: opendiscuss.summaries.approved
+        method: subscribe
+
+  onClusteringCompleted:
+    summary: Notify Sankey Construction
+    tags:
+      - spec-4-to-spec-5
+    message:
+      $ref: '#/components/messages/ClusteringCompleted'
+    bindings:
+      redis:
+        channel: opendiscuss.clustering.completed
+        method: subscribe
+
+  onAlignmentCompleted:
+    summary: Notify Sankey of display groups
+    tags:
+      - spec-4-to-spec-5
+    message:
+      $ref: '#/components/messages/AlignmentCompleted'
+    bindings:
+      redis:
+        channel: opendiscuss.alignment.completed
+        method: subscribe

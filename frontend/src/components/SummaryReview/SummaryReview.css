@@ -1,0 +1,221 @@
+/**
+ * Styles for SummaryReview component (Spec 003)
+ */
+
+.summary-review {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  margin: 16px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* T083-T084: Style for superseded summaries */
+.summary-review.superseded {
+  opacity: 0.7;
+  border: 1px solid #ff9800;
+  background: #fff3e0;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.summary-status {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: #ffd700;
+  color: #333;
+}
+
+/* T083-T084: Status-specific colors */
+.summary-status.status-approved {
+  background: #4caf50;
+  color: white;
+}
+
+.summary-status.status-superseded {
+  background: #ff9800;
+  color: white;
+}
+
+.summary-status.status-pending_review {
+  background: #ffd700;
+  color: #333;
+}
+
+.summary-status.status-rejected {
+  background: #f44336;
+  color: white;
+}
+
+/* T083-T084: Superseded notice */
+.superseded-notice {
+  background: #ffe0b2;
+  border: 1px solid #ff9800;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 12px 0;
+  color: #e65100;
+  font-size: 14px;
+}
+
+.summary-content {
+  margin: 16px 0;
+}
+
+.summary-text {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  margin: 0 0 12px 0;
+  padding: 16px;
+  background: #f9f9f9;
+  border-left: 4px solid #4caf50;
+  border-radius: 4px;
+}
+
+.summary-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.char-count {
+  font-weight: 500;
+}
+
+.safety-flags {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 12px;
+  margin: 16px 0;
+}
+
+.safety-flags strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #856404;
+}
+
+.safety-flags ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #856404;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-approve {
+  background: #4caf50;
+  color: white;
+  flex: 1;
+}
+
+.btn-approve:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.btn-reject {
+  background: #f44336;
+  color: white;
+  flex: 1;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #da190b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+}
+
+.summary-approved {
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.success-message {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  color: #155724;
+}
+
+.approved-at {
+  font-size: 12px;
+  color: #155724;
+}
+
+.summary-help {
+  background: #e8f4f8;
+  border-left: 4px solid #2196f3;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 4px;
+}
+
+.summary-help p {
+  margin: 0;
+  font-size: 13px;
+  color: #0d47a1;
+  line-height: 1.5;
+}
+
+.summary-help strong {
+  color: #01579b;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .summary-review {
+    padding: 16px;
+  }
+
+  .summary-actions {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,351 @@
+asyncapi: 2.6.0
+info:
+  title: Input Collection Protocol Events
+  version: 1.0.0
+  description: |
+    Event contracts for Input Collection Protocol (Spec 002) integration with other specs.
+
+    **Event Flow**:
+    - Spec 2 → Spec 3: `submission.created` (forward for summarization)
+    - Spec 3 → Spec 2: `summarization.completed` (trigger ephemeral cleanup)
+    - Spec 3 → Spec 2: `summary.approved` (update counted status)
+
+channels:
+  submission.created:
+    description: |
+      Published when a participant submits text or voice input during a round.
+      Subscribers: Spec 3 (Summarization & Approval Protocol)
+
+    subscribe:
+      summary: New submission ready for summarization
+      operationId: onSubmissionCreated
+      message:
+        $ref: '#/components/messages/SubmissionCreated'
+
+  summary.approved:
+    description: |
+      Published when a participant approves a summary (Spec 3).
+      Subscribers: Spec 2 (to update counted status)
+
+    subscribe:
+      summary: Summary approved by participant
+      operationId: onSummaryApproved
+      message:
+        $ref: '#/components/messages/SummaryApproved'
+
+  summarization.completed:
+    description: |
+      Published when all summaries for a round are finalized (approved or failed).
+      Subscribers: Spec 2 (to cleanup ephemeral data)
+
+    subscribe:
+      summary: Round summarization complete
+      operationId: onSummarizationCompleted
+      message:
+        $ref: '#/components/messages/SummarizationCompleted'
+
+components:
+  messages:
+    SubmissionCreated:
+      name: SubmissionCreated
+      title: Submission Created Event
+      summary: A participant has submitted input during a round
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SubmissionCreatedPayload'
+      examples:
+        - name: textSubmission
+          summary: Text input submission
+          payload:
+            event_id: "e1f2g3h4-5678-90ab-cdef-1234567890ab"
+            event_type: "submission.created"
+            timestamp: "2026-01-29T14:02:30.123Z"
+            data:
+              submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+              user_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              submission_text: "I think we should prioritize accessibility features."
+              timestamp: "2026-01-29T14:02:30.123Z"
+              modality: "TEXT"
+
+        - name: voiceSubmission
+          summary: Approved voice transcript submission
+          payload:
+            event_id: "f2g3h4i5-5678-90ab-cdef-1234567890cd"
+            event_type: "submission.created"
+            timestamp: "2026-01-29T14:03:15.456Z"
+            data:
+              submission_id: "g2h3i4j5-5678-90ab-cdef-1234567890gh"
+              user_id: "b2c3d4e5-5678-90ab-cdef-1234567890bc"
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              submission_text: "We need to improve onboarding for new users."
+              timestamp: "2026-01-29T14:03:15.456Z"
+              modality: "VOICE"
+
+    SummaryApproved:
+      name: SummaryApproved
+      title: Summary Approved Event
+      summary: A participant has approved their summary (from Spec 3)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SummaryApprovedPayload'
+      examples:
+        - name: firstApproval
+          summary: Participant's first approval in round
+          payload:
+            event_id: "g3h4i5j6-5678-90ab-cdef-1234567890de"
+            event_type: "summary.approved"
+            timestamp: "2026-01-29T14:04:00.789Z"
+            data:
+              summary_id: "h3i4j5k6-5678-90ab-cdef-1234567890hi"
+              submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+              user_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              approved_at: "2026-01-29T14:04:00.789Z"
+
+        - name: subsequentApproval
+          summary: Participant approves new submission (last-approved-wins)
+          payload:
+            event_id: "h4i5j6k7-5678-90ab-cdef-1234567890ef"
+            event_type: "summary.approved"
+            timestamp: "2026-01-29T14:04:30.123Z"
+            data:
+              summary_id: "i4j5k6l7-5678-90ab-cdef-1234567890ij"
+              submission_id: "g2h3i4j5-5678-90ab-cdef-1234567890gh"
+              user_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              approved_at: "2026-01-29T14:04:30.123Z"
+              supersedes_submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+
+    SummarizationCompleted:
+      name: SummarizationCompleted
+      title: Summarization Completed Event
+      summary: All summaries for a round are finalized
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SummarizationCompletedPayload'
+      examples:
+        - name: roundComplete
+          summary: Round 1 summarization finished
+          payload:
+            event_id: "i5j6k7l8-5678-90ab-cdef-1234567890fg"
+            event_type: "summarization.completed"
+            timestamp: "2026-01-29T14:10:00.000Z"
+            data:
+              round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+              completed_at: "2026-01-29T14:10:00.000Z"
+              total_submissions: 95
+              approved_summaries: 92
+              failed_summaries: 3
+
+  schemas:
+    SubmissionCreatedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Unique event identifier for idempotency
+        event_type:
+          type: string
+          const: "submission.created"
+        timestamp:
+          type: string
+          format: date-time
+          description: Event publication time
+        data:
+          type: object
+          required:
+            - submission_id
+            - user_id
+            - round_id
+            - submission_text
+            - timestamp
+            - modality
+          properties:
+            submission_id:
+              type: string
+              format: uuid
+              description: Unique submission identifier
+            user_id:
+              type: string
+              format: uuid
+              description: Participant identifier (same as participant_id)
+            round_id:
+              type: string
+              format: uuid
+              description: Round identifier
+            submission_text:
+              type: string
+              minLength: 1
+              maxLength: 5000
+              description: |
+                Normalized text (typed input or voice transcript).
+                Guarantees:
+                - Leading/trailing whitespace trimmed
+                - No HTML tags
+                - Original meaning preserved (no interpretation)
+            timestamp:
+              type: string
+              format: date-time
+              description: Server-authoritative submission timestamp
+            modality:
+              type: string
+              enum: [TEXT, VOICE]
+              description: Input method (informational, not used by Spec 3)
+
+    SummaryApprovedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: "summary.approved"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - summary_id
+            - submission_id
+            - user_id
+            - round_id
+            - approved_at
+          properties:
+            summary_id:
+              type: string
+              format: uuid
+              description: Summary identifier (from Spec 3)
+            submission_id:
+              type: string
+              format: uuid
+              description: Source submission identifier (from Spec 2)
+            user_id:
+              type: string
+              format: uuid
+              description: Participant who approved
+            round_id:
+              type: string
+              format: uuid
+            approved_at:
+              type: string
+              format: date-time
+            supersedes_submission_id:
+              type: string
+              format: uuid
+              description: |
+                Optional. If present, indicates this approval supersedes a previous
+                submission (last-approved-wins). Spec 2 should unmark the previous
+                submission's counted status.
+
+    SummarizationCompletedPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+        - data
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          const: "summarization.completed"
+        timestamp:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - round_id
+            - completed_at
+            - total_submissions
+            - approved_summaries
+            - failed_summaries
+          properties:
+            round_id:
+              type: string
+              format: uuid
+              description: Round that completed summarization
+            completed_at:
+              type: string
+              format: date-time
+              description: Completion timestamp
+            total_submissions:
+              type: integer
+              description: Total submissions forwarded to summarization
+            approved_summaries:
+              type: integer
+              description: Number of summaries approved by participants
+            failed_summaries:
+              type: integer
+              description: Number of summaries that failed or were not approved
+
+externalDocs:
+  description: OpenDiscuss Protocol Suite Index
+  url: https://github.com/opendiscuss/protocol-suite
+
+servers:
+  development:
+    url: localhost:6379
+    protocol: redis
+    description: Local Redis for pub/sub (MVP)
+
+  production:
+    url: redis.example.com:6379
+    protocol: redis
+    description: Production event bus
+
+tags:
+  - name: spec-2-to-spec-3
+    description: Events from Input Collection to Summarization
+  - name: spec-3-to-spec-2
+    description: Events from Summarization to Input Collection
+
+operations:
+  onSubmissionCreated:
+    summary: Handle new submission
+    tags:
+      - spec-2-to-spec-3
+    message:
+      $ref: '#/components/messages/SubmissionCreated'
+    bindings:
+      redis:
+        channel: opendiscuss.submissions
+        method: subscribe
+
+  onSummaryApproved:
+    summary: Update counted status
+    tags:
+      - spec-3-to-spec-2
+    message:
+      $ref: '#/components/messages/SummaryApproved'
+    bindings:
+      redis:
+        channel: opendiscuss.summaries.approved
+        method: subscribe
+
+  onSummarizationCompleted:
+    summary: Cleanup ephemeral data
+    tags:
+      - spec-3-to-spec-2
+    message:
+      $ref: '#/components/messages/SummarizationCompleted'
+    bindings:
+      redis:
+        channel: opendiscuss.summarization.completed
+        method: subscribe

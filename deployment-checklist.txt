@@ -1,0 +1,76 @@
+╔═══════════════════════════════════════════════════════════════╗
+║         OPENDISCUSS DEPLOYMENT CHECKLIST                      ║
+║         Render (Backend) + Vercel (Frontend)                  ║
+╚═══════════════════════════════════════════════════════════════╝
+
+STEP 1: PUSH TO GITHUB
+[ ] Git add all files
+[ ] Git commit with message
+[ ] Git push to main branch
+    Commands:
+      git add .
+      git commit -m "Add deployment configs"
+      git push origin main
+
+STEP 2: DEPLOY BACKEND TO RENDER
+[ ] Sign up at https://render.com
+[ ] Click "New +" → "Blueprint"
+[ ] Connect GitHub repository
+[ ] Click "Apply" (auto-detects render.yaml)
+[ ] Wait for deployment (~5 minutes)
+[ ] Add environment variables:
+    [ ] OPENAI_API_KEY
+    [ ] ANTHROPIC_API_KEY
+[ ] Copy backend URL: _________________________________
+
+STEP 3: DEPLOY FRONTEND TO VERCEL
+[ ] Sign up at https://vercel.com
+[ ] Click "Add New..." → "Project"
+[ ] Import your repository
+[ ] Set Root Directory: "frontend"
+[ ] Add environment variable:
+    Name:  VITE_API_URL
+    Value: [Your Render backend URL from Step 2]
+[ ] Click "Deploy"
+[ ] Wait for deployment (~2 minutes)
+[ ] Copy frontend URL: _________________________________
+
+STEP 4: UPDATE CORS
+[ ] Go to Render dashboard
+[ ] Open backend service
+[ ] Environment tab
+[ ] Update CORS_ORIGINS to your Vercel URL
+[ ] Save changes
+
+STEP 5: TEST
+[ ] Open frontend URL on desktop
+[ ] Test creating a discussion
+[ ] Open frontend URL on phone
+[ ] Run API health check:
+    curl [Your backend URL]/health
+
+╔═══════════════════════════════════════════════════════════════╗
+║                      YOUR LIVE URLS                           ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Frontend (Vercel): _________________________________________
+
+Backend (Render):  _________________________________________
+
+API Docs:          _________________________________________/docs
+
+╔═══════════════════════════════════════════════════════════════╗
+║                      READY TO SHARE!                          ║
+╚═══════════════════════════════════════════════════════════════╝
+
+✅ All done! Your app is live and accessible from any device!
+
+Next steps:
+  • Share your Vercel URL with users
+  • Test the 100-participant simulation
+  • View Sankey diagrams on mobile
+  • Optional: Add custom domain
+  • Optional: Set up monitoring
+
+Total time: ~10 minutes
+Total cost: $0 (free tier)

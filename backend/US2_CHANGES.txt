@@ -1,0 +1,140 @@
+USER STORY 2 (T038-T042) IMPLEMENTATION CHANGES
+================================================
+
+Date: 2026-02-02
+Status: ✅ COMPLETE
+
+SUMMARY OF CHANGES
+------------------
+
+T038: ✅ Already implemented in clustering_algorithms.py
+T039: ✅ Already implemented in clustering_service.py  
+T040: ✅ Already implemented in clustering_service.py
+T041: ✅ NEWLY IMPLEMENTED (event metric tracking)
+T042: ✅ Already implemented in test_minority_preservation.py
+
+NEW CODE ADDED (T041)
+---------------------
+
+File 1: /backend/src/services/event_service.py
+-----------------------------------------------
+
+Line 234: Added parameter to function signature:
+  minority_cluster_count: Optional[int] = None,
+
+Lines 244-246: Added to docstring:
+  - minority_cluster_count: Number of minority clusters (1-2 participants)
+
+Lines 260-261: Added to Args section:
+  minority_cluster_count: Number of minority clusters (1-2 participants)
+
+Line 267: Added to Requirements:
+  - T041: Track minority_cluster_count metric
+
+Line 283: Added validation:
+  if minority_cluster_count is not None and minority_cluster_count < 0:
+      raise ValueError(f"minority_cluster_count must be non-negative, got {minority_cluster_count}")
+
+Lines 298-299: Added to payload:
+  # T041: Add minority_cluster_count metric
+  if minority_cluster_count is not None:
+      payload["minority_cluster_count"] = minority_cluster_count
+
+Lines 305-315: Enhanced logging with conditional minority_cluster_count
+
+
+File 2: /backend/src/api/routes/clustering.py
+----------------------------------------------
+
+Lines 660-664: Calculate minority_cluster_count:
+  # Calculate minority cluster count (T041: clusters with 1-2 participants)
+  minority_cluster_count = sum(
+      1 for user_count, _ in cluster_stats.values()
+      if user_count <= 2
+  )
+  logger.info(f"[STEP:METRICS] minority_cluster_count={minority_cluster_count}")
+
+Line 666: Updated comment:
+  # Step 9: Publish clustering.completed event (T034, T041)
+
+Line 672: Added parameter to event publisher call:
+  minority_cluster_count=minority_cluster_count  # T041
+
+
+VERIFICATION
+------------
+
+Run: cd /backend && python3 verify_us2_simple.py
+
+Expected output:
+  T038: ✅ PASS
+  T039: ✅ PASS
+  T040: ✅ PASS
+  T041: ✅ PASS
+  T042: ✅ PASS
+
+  TOTAL: 5/5 tasks implemented
+
+
+TESTING
+-------
+
+Run integration tests:
+  cd /backend
+  poetry run pytest tests/integration/test_minority_preservation.py -v
+
+Expected: 3 tests pass
+  - test_minority_preservation_18_plus_2
+  - test_variable_cluster_count
+  - test_no_minimum_cluster_size_enforcement
+
+
+DOCUMENTATION
+-------------
+
+Created:
+  /backend/US2_IMPLEMENTATION_CHECKLIST.md
+  /backend/US2_COMPLETION_SUMMARY.md
+  /backend/verify_us2_simple.py
+  /specs/004-clustering-alignment/US2_COMPLETION_REPORT.md
+  /backend/US2_CHANGES.txt (this file)
+
+Updated:
+  /specs/004-clustering-alignment/tasks.md (marked T038-T042 as [x])
+
+
+CONSTITUTIONAL COMPLIANCE
+-------------------------
+
+✅ Semantic Accuracy Over Aesthetics
+   - No forced merging (FR-013, T040)
+   - Minority clusters preserved (FR-012, T038)
+   - Variable cluster count (FR-009, T039)
+
+✅ Intent Fidelity
+   - Only approved summaries clustered
+   - No synthetic abstractions
+
+✅ Temporal Transparency
+   - Per-round clustering
+   - No cross-round semantic enforcement
+
+
+DEPENDENCIES MET
+----------------
+
+✅ User Story 1 (T019-T037) - Core clustering functional
+✅ HDBSCAN integration working
+✅ Embedding generation operational
+✅ Database schema in place
+
+
+NEXT STEPS
+----------
+
+[ ] Run integration tests with full dependencies
+[ ] Manual testing with sample data
+[ ] Deploy to staging environment
+[ ] Monitor minority_cluster_count metric
+[ ] Proceed to User Story 3 (T043-T048)
+

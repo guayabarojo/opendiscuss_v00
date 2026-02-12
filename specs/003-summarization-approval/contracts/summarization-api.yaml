@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: OpenDiscuss Micro-Summarization & Approval API
+  description: Summary generation, approval workflow, and bounded regeneration
+  version: 1.0.0
+
+servers:
+  - url: https://api.opendiscuss.example/v1
+  - url: http://localhost:8000/v1
+
+paths:
+  /summaries/{summary_id}/approve:
+    post:
+      summary: Approve summary (explicit participant action)
+      operationId: approveSummary
+      parameters:
+        - name: summary_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Summary approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+        '400':
+          description: Cannot approve (already approved, deadline expired, disallowed content)
+        '404':
+          description: Summary not found
+
+  /summaries/{summary_id}/reject:
+    post:
+      summary: Reject summary (triggers regeneration if attempts remaining)
+      operationId: rejectSummary
+      parameters:
+        - name: summary_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Summary rejected, regeneration triggered
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Summary'
+                  - $ref: '#/components/schemas/CorrectionSignalRequest'
+        '400':
+          description: Cannot reject (already approved, deadline expired)
+
+  /summaries/{summary_id}/correction:
+    post:
+      summary: Provide correction signal (after 2 auto-regenerations)
+      operationId: provideCorrectionSignal
+      parameters:
+        - name: summary_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionSignalInput'
+      responses:
+        '200':
+          description: Correction signal received, regenerating summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+        '400':
+          description: Correction signal not allowed (regen_count < 2)
+
+components:
+  schemas:
+    Summary:
+      type: object
+      required:
+        - summary_id
+        - submission_id
+        - participant_id
+        - round_id
+        - summary_text
+        - status
+        - regen_count
+        - llm_model
+        - created_at
+      properties:
+        summary_id:
+          type: string
+          format: uuid
+        submission_id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+        summary_text:
+          type: string
+          maxLength: 500
+        status:
+          type: string
+          enum:
+            - PENDING_REVIEW
+            - APPROVED
+            - REJECTED
+            - SUPERSEDED
+            - REJECTED_FINAL
+            - APPROVAL_TIMEOUT
+            - DISALLOWED_CONTENT
+        regen_count:
+          type: integer
+          minimum: 0
+          maximum: 3
+        llm_model:
+          type: string
+          enum: [gpt-4-turbo, gpt-3.5-turbo]
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        safety_flags:
+          type: array
+          items:
+            type: string
+            enum: [PROFANITY_NEUTRALIZED, DISALLOWED_CONTENT]
+
+    CorrectionSignalRequest:
+      type: object
+      required:
+        - message
+        - correction_required
+      properties:
+        message:
+          type: string
+          example: "Please provide feedback to improve this summary"
+        correction_required:
+          type: boolean
+          example: true
+        reason_tags:
+          type: array
+          items:
+            type: string
+            enum:
+              - WRONG_CRUX
+              - TOO_VAGUE
+              - MISREPRESENTS_ME
+              - MISSED_CONSTRAINT
+              - MISSED_SOLUTION
+              - OTHER
+
+    CorrectionSignalInput:
+      type: object
+      required:
+        - reason_tag
+      properties:
+        reason_tag:
+          type: string
+          enum:
+            - WRONG_CRUX
+            - TOO_VAGUE
+            - MISREPRESENTS_ME
+            - MISSED_CONSTRAINT
+            - MISSED_SOLUTION
+            - OTHER
+        feedback_text:
+          type: string
+          maxLength: 240
+          nullable: true
+
+security:
+  - BearerAuth: []

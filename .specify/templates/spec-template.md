@@ -1,9 +1,12 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
-**Status**: Draft  
+**Feature Branch**: `[###-feature-name]`
+**Created**: [DATE]
+**Status**: Draft
 **Input**: User description: "$ARGUMENTS"
+
+**Constitution Compliance**: All features MUST comply with `.specify/memory/constitution.md`.
+Check MVP Boundaries section for explicit non-features before proceeding.
 
 ## User Scenarios & Testing *(mandatory)*
 

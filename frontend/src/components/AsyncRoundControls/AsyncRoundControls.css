@@ -1,0 +1,94 @@
+.async-round-controls {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid #dee2e6;
+}
+
+.async-status-section {
+  margin-bottom: 20px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.status-badge.accepting {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.submission-stats {
+  margin: 10px 0;
+}
+
+.submission-count {
+  font-size: 16px;
+  color: #333;
+  margin: 5px 0;
+}
+
+.soft-deadline {
+  font-size: 14px;
+  color: #666;
+  margin: 10px 0;
+}
+
+.host-controls {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.close-round-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.help-text {
+  font-size: 13px;
+  color: #6c757d;
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.participant-info {
+  padding: 15px;
+  background-color: #e7f3ff;
+  border-radius: 6px;
+  border-left: 4px solid #0066cc;
+}
+
+.info-text {
+  margin: 0;
+  color: #004085;
+  font-size: 14px;
+}

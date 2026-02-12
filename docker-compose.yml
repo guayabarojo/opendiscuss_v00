@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  # PostgreSQL 15+ with pgvector - Discussion state persistence and vector embeddings
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: opendiscuss-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opendiscuss
+      POSTGRES_USER: opendiscuss
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opendiscuss_dev}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - opendiscuss-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opendiscuss"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7+ - Timing coordination and ephemeral submission data
+  redis:
+    image: redis:7-alpine
+    container_name: opendiscuss-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - opendiscuss-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+    name: opendiscuss-postgres-data
+  redis_data:
+    driver: local
+    name: opendiscuss-redis-data
+
+networks:
+  opendiscuss-network:
+    driver: bridge
+    name: opendiscuss-network

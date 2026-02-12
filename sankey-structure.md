@@ -1,0 +1,90 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "OpenDiscuss" [level=1] [ref=e5]
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - heading "Discussion Flow Visualization" [level=1] [ref=e15]
+        - paragraph [ref=e10]: Participant movement across 10 rounds
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: "Discussion ID:"
+          - generic [ref=e19]: d4f27873-7c28-4d00-9084-ed2fb0d74b7e
+        - generic [ref=e20]:
+          - generic [ref=e21]: "Total Rounds:"
+          - generic [ref=e22]: "10"
+        - generic [ref=e23]:
+          - generic [ref=e24]: "Initial Participants:"
+          - generic [ref=e25]: "100"
+        - generic [ref=e26]:
+          - generic [ref=e27]: "Final Participants:"
+          - generic [ref=e28]: "100"
+        - generic [ref=e29]:
+          - generic [ref=e30]: "Dropout Rate:"
+          - generic [ref=e31]: 0.0%
+        - generic [ref=e32]:
+          - generic [ref=e33]: "Created:"
+          - generic [ref=e34]: 2/6/2026, 11:50:54 AM
+        - generic [ref=e35]:
+          - generic [ref=e36]: "Construction Time:"
+          - generic [ref=e37]: 79ms
+      - img "Sankey diagram showing participant distribution and movement across rounds" [ref=e40]:
+        - generic [ref=e41]:
+          - generic "What are the most important ethical principles that should guide AI development?" [ref=e42]:
+            - generic [ref=e43]: What are the most important ethical principles that should...
+          - generic "How can we ensure AI systems remain transparent and accountable to society?" [ref=e44]:
+            - generic [ref=e45]: How can we ensure AI systems remain transparent and...
+          - generic "What role should government regulation play in AI development and deployment?" [ref=e46]:
+            - generic [ref=e47]: What role should government regulation play in AI...
+          - generic "How might AI impact employment and economic inequality over the next decade?" [ref=e48]:
+            - generic [ref=e49]: How might AI impact employment and economic inequality over...
+          - generic "What safeguards are needed to prevent AI bias and discrimination?" [ref=e50]:
+            - generic [ref=e51]: What safeguards are needed to prevent AI bias and...
+          - generic "How should we balance AI innovation with privacy rights and data protection?" [ref=e52]:
+            - generic [ref=e53]: How should we balance AI innovation with privacy rights and...
+          - generic "What are the risks and benefits of AI in critical infrastructure and healthcare?" [ref=e54]:
+            - generic [ref=e55]: What are the risks and benefits of AI in critical...
+          - generic "How can we ensure AI development benefits all of humanity, not just wealthy nations?" [ref=e56]:
+            - generic [ref=e57]: How can we ensure AI development benefits all of humanity,...
+          - generic "What educational changes are needed to prepare society for an AI-driven future?" [ref=e58]:
+            - generic [ref=e59]: What educational changes are needed to prepare society for...
+          - generic "How should we approach the development of artificial general intelligence (AGI)?" [ref=e60]:
+            - generic [ref=e61]: How should we approach the development of artificial...
+          - generic [ref=e2011]: 100 participants
+          - generic [ref=e2012]: 100 participants
+          - generic [ref=e2013]: 100 participants
+          - generic [ref=e2014]: 100 participants
+          - generic [ref=e2015]: 100 participants
+          - generic [ref=e2016]: 100 participants
+          - generic [ref=e2017]: 100 participants
+          - generic [ref=e2018]: 100 participants
+          - generic [ref=e2019]: 100 participants
+          - generic [ref=e2020]: 100 participants
+      - generic [ref=e2021]:
+        - heading "How to Read This Diagram" [level=3] [ref=e2022]
+        - list [ref=e2023]:
+          - listitem [ref=e2024]:
+            - strong [ref=e2025]: "Columns:"
+            - text: Each vertical column represents one discussion round
+          - listitem [ref=e2026]:
+            - strong [ref=e2027]: "Nodes (Rectangles):"
+            - text: Each rectangle represents a cluster of similar participant responses (thought space)
+          - listitem [ref=e2028]:
+            - strong [ref=e2029]: "Node Height:"
+            - text: The height of each node is proportional to the percentage of participants in that cluster
+          - listitem [ref=e2030]:
+            - strong [ref=e2031]: "Edges (Flows):"
+            - text: Curved lines between nodes show participant movement between clusters across rounds
+          - listitem [ref=e2032]:
+            - strong [ref=e2033]: "Edge Width:"
+            - text: The width of each flow is proportional to the number of participants who made that transition
+          - listitem [ref=e2034]:
+            - strong [ref=e2035]: "Colors:"
+            - text: Node colors indicate alignment groups across rounds (same topic/theme maintained across rounds)
+          - listitem [ref=e2036]:
+            - strong [ref=e2037]: "Hover:"
+            - text: Hover over any node or edge to see detailed information and participant counts
+        - paragraph [ref=e2038]: "Tip: The diagram naturally narrows if participants drop out between rounds, providing an honest view of engagement over time."
+  - button "👤 bob_participant" [ref=e12] [cursor=pointer]:
+    - generic [ref=e13]: 👤
+    - generic [ref=e14]: bob_participant

@@ -1,0 +1,131 @@
+OpenDiscuss Frontend - Desktop Layout Structure
+================================================
+
+Directory Tree:
+---------------
+frontend/
+├── LAYOUT_INTEGRATION_GUIDE.md ............... Quick start guide
+├── DESKTOP_LAYOUT_SUMMARY.md ................. Implementation summary
+└── src/
+    ├── index.css .............................. Updated with CSS custom properties
+    ├── App.tsx ................................ Original (unchanged)
+    ├── AppWithLayout.tsx ...................... Example integration
+    │
+    ├── layouts/
+    │   ├── index.ts ........................... Layout exports
+    │   ├── DesktopLayout.tsx .................. Main layout component
+    │   ├── DesktopLayout.css .................. Layout styles
+    │   └── README.md .......................... Detailed documentation
+    │
+    ├── components/
+    │   ├── Topbar/
+    │   │   ├── index.ts ....................... Component exports
+    │   │   ├── Topbar.tsx ..................... Sticky header component
+    │   │   └── Topbar.css ..................... Header styles
+    │   │
+    │   ├── CommunityRail/
+    │   │   ├── index.ts ....................... Component exports
+    │   │   ├── CommunityRail.tsx .............. 56px icon rail
+    │   │   └── CommunityRail.css .............. Rail styles
+    │   │
+    │   ├── CommunitySidebar/
+    │   │   ├── index.ts ....................... Component exports
+    │   │   ├── CommunitySidebar.tsx ........... 260px sidebar
+    │   │   └── CommunitySidebar.css ........... Sidebar styles
+    │   │
+    │   └── RightSidebar/
+    │       ├── index.ts ....................... Component exports
+    │       ├── RightSidebar.tsx ............... 320px widget sidebar
+    │       └── RightSidebar.css ............... Widget styles
+    │
+    └── pages/
+        └── ApprovalInterface/
+            ├── ApprovalInterface.tsx .......... Original (unchanged)
+            └── ApprovalInterfaceWithLayout.tsx  Example wrapper
+
+Visual Layout:
+--------------
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Topbar (60px sticky)                         │
+│  [Logo]  [================== Search ==================]  [Actions]  │
+├────┬─────────────────┬──────────────────────────┬───────────────────┤
+│    │                 │                          │                   │
+│ R  │   Sidebar       │      Main Content        │   Right Sidebar   │
+│ a  │   (260px)       │      (Flexible)          │   (320px)         │
+│ i  │                 │                          │                   │
+│ l  │  Navigation     │   <Page Content>         │   Widgets         │
+│    │  • Home         │                          │   • Active        │
+│(56)│  • Create       │   <Your Components>      │   • Trending      │
+│    │  • Reports      │                          │   • Stats         │
+│    │                 │   Scrollable area        │   • Activity      │
+│    │  [Settings]     │                          │                   │
+│    │  [Help]         │                          │   Scrollable      │
+│    │                 │                          │                   │
+└────┴─────────────────┴──────────────────────────┴───────────────────┘
+
+Responsive Breakpoints:
+-----------------------
+
+Desktop (> 1100px):     [Rail] [Sidebar] [Main] [Right]
+Tablet  (820-1100px):   [Rail] [Sidebar] [Main]
+Mobile  (600-820px):    [Rail] [Main]
+Small   (< 600px):      [Main]
+
+CSS Custom Properties:
+----------------------
+--bg: #f5f5f5           Background
+--panel: #ffffff        Panels/cards
+--border: #e0e0e0       Borders
+--text: #213547         Text
+--muted: #666666        Muted text
+--accent: #667eea       Accent color
+--radius: 8px           Border radius
+
+Component Props:
+----------------
+<DesktopLayout
+  showRail={true}           // Show/hide 56px rail
+  showSidebar={true}        // Show/hide 260px sidebar
+  showRightSidebar={true}   // Show/hide 320px right sidebar
+>
+  <YourContent />
+</DesktopLayout>
+
+Integration Examples:
+---------------------
+
+1. Full Layout:
+   <DesktopLayout>
+     <HomePage />
+   </DesktopLayout>
+
+2. Focus Mode (no right sidebar):
+   <DesktopLayout showRightSidebar={false}>
+     <DiscussionLive />
+   </DesktopLayout>
+
+3. Minimal Layout (content only):
+   <DesktopLayout showRail={false} showSidebar={false} showRightSidebar={false}>
+     <FullscreenView />
+   </DesktopLayout>
+
+Files Created: 20
+Total Size: ~62 KB
+Dependencies: None (uses existing React/Router)
+Breaking Changes: None (opt-in integration)
+
+Next Steps:
+-----------
+1. Run: npm run build (to verify compilation)
+2. Run: npm run dev (to test in browser)
+3. Test responsive breakpoints at: 1400px, 1100px, 820px, 600px
+4. Integrate with existing pages gradually
+5. Customize components and widgets as needed
+
+Documentation:
+--------------
+- LAYOUT_INTEGRATION_GUIDE.md ... Quick start
+- src/layouts/README.md ......... Detailed docs
+- AppWithLayout.tsx ............. Full example
+- Component source files ........ Inline comments

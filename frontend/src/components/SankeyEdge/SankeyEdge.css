@@ -1,0 +1,60 @@
+/* SankeyEdge Component Styles */
+
+.sankey-edge {
+  transition: all 0.2s ease-in-out;
+}
+
+.sankey-edge-path {
+  transition: stroke 0.2s ease-in-out, stroke-width 0.2s ease-in-out, stroke-opacity 0.2s ease-in-out;
+}
+
+.sankey-edge-hover-target {
+  pointer-events: stroke;
+}
+
+.sankey-edge-tooltip-container {
+  pointer-events: none;
+  z-index: 100;
+}
+
+.sankey-edge-tooltip {
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 200px;
+}
+
+.sankey-edge-tooltip .tooltip-header {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+}
+
+.sankey-edge-tooltip .tooltip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sankey-edge-tooltip .tooltip-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.sankey-edge-tooltip .stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+.sankey-edge-tooltip .stat-value {
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}

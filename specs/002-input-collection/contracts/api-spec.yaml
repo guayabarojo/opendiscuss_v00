@@ -1,0 +1,614 @@
+openapi: 3.0.3
+info:
+  title: Input Collection Protocol API
+  description: |
+    API contract for parallel input collection during synchronous discussion rounds.
+    Handles text and voice submissions with strict window enforcement and rate limiting.
+
+    **Constitutional Compliance**:
+    - Parallel-First Architecture: Independent, non-reactive input collection
+    - Synchronous Deliberation: Time-bounded submission windows
+    - Temporal Transparency: Stable participant identifiers for movement tracking
+
+  version: 1.0.0
+  contact:
+    name: OpenDiscuss Protocol Suite
+    url: https://github.com/opendiscuss
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api.opendiscuss.example/api/v1
+    description: Production (placeholder)
+
+tags:
+  - name: submissions
+    description: Text and voice submission endpoints
+  - name: windows
+    description: Submission window timing and synchronization
+  - name: voice
+    description: Voice transcription endpoints
+
+paths:
+  /submissions:
+    post:
+      tags:
+        - submissions
+      summary: Submit text or transcript input
+      description: |
+        Accepts a text submission (typed text or approved voice transcript) during an active round.
+
+        **Validation**:
+        - Submission timestamp must fall within round window (FR-009)
+        - Participant must be under rate limit (FR-011)
+        - Content must be non-empty and <= 5000 chars
+
+        **Side Effects**:
+        - Creates SubmissionMetadata (persistent)
+        - Stores RawSubmission (ephemeral)
+        - Increments rate limit counter
+        - Publishes submission.created event to Spec 3
+
+      operationId: createSubmission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionRequest'
+            examples:
+              textSubmission:
+                summary: Text input submission
+                value:
+                  participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                  submission_text: "I think we should prioritize accessibility features in the next release."
+                  modality: "TEXT"
+              voiceSubmission:
+                summary: Approved voice transcript submission
+                value:
+                  participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                  round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                  submission_text: "We need to focus on improving the onboarding experience for new users."
+                  modality: "VOICE"
+
+      responses:
+        '201':
+          description: Submission accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+              example:
+                submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+                participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                timestamp: "2026-01-29T14:02:30.123Z"
+                modality: "TEXT"
+                counted: false
+                message: "Submission accepted. Awaiting summarization."
+
+        '400':
+          description: Invalid submission content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyContent:
+                  summary: Empty submission text
+                  value:
+                    error: "INVALID_CONTENT"
+                    message: "Submission text cannot be empty or whitespace-only."
+                    details:
+                      field: "submission_text"
+                      validation: "non_empty"
+                tooLong:
+                  summary: Content exceeds max length
+                  value:
+                    error: "INVALID_CONTENT"
+                    message: "Submission text exceeds maximum length of 5000 characters."
+                    details:
+                      field: "submission_text"
+                      max_length: 5000
+                      actual_length: 5234
+
+        '403':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "RATE_LIMIT_EXCEEDED"
+                message: "You have reached the maximum of 3 submissions for this round."
+                details:
+                  submissions_count: 3
+                  max_allowed: 3
+                  round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+
+        '422':
+          description: Submission outside window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                beforeWindow:
+                  summary: Submission before window opens
+                  value:
+                    error: "OUTSIDE_WINDOW"
+                    message: "The submission window has not opened yet."
+                    details:
+                      window_start: "2026-01-29T14:00:00Z"
+                      window_end: "2026-01-29T14:05:00Z"
+                      current_time: "2026-01-29T13:59:45Z"
+                      status: "BEFORE_WINDOW"
+                afterWindow:
+                  summary: Submission after window closes
+                  value:
+                    error: "OUTSIDE_WINDOW"
+                    message: "The submission window has closed."
+                    details:
+                      window_start: "2026-01-29T14:00:00Z"
+                      window_end: "2026-01-29T14:05:00Z"
+                      current_time: "2026-01-29T14:05:01Z"
+                      status: "AFTER_WINDOW"
+
+  /submissions/{submission_id}:
+    get:
+      tags:
+        - submissions
+      summary: Get submission metadata
+      description: |
+        Retrieves metadata for a submission (timestamp, modality, counted status).
+        **Does NOT return raw submission text** (ephemeral data, not exposed via API).
+
+      operationId: getSubmission
+      parameters:
+        - name: submission_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: Submission metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionMetadata'
+              example:
+                submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+                participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                timestamp: "2026-01-29T14:02:30.123Z"
+                modality: "TEXT"
+                counted: true
+
+        '404':
+          description: Submission not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /rounds/{round_id}/window:
+    get:
+      tags:
+        - windows
+      summary: Get submission window status
+      description: |
+        Returns current submission window state for a round. Used by clients to:
+        - Initialize countdown timer on page load
+        - Recover from WebSocket disconnection
+        - Determine if submissions are currently accepted
+
+        **Real-time updates**: Clients should prefer WebSocket connection for sub-second timer updates.
+
+      operationId: getRoundWindow
+      parameters:
+        - name: round_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: Window status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WindowStatus'
+              examples:
+                activeWindow:
+                  summary: Window is open
+                  value:
+                    round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                    window_start: "2026-01-29T14:00:00Z"
+                    window_end: "2026-01-29T14:05:00Z"
+                    current_time: "2026-01-29T14:02:30Z"
+                    time_remaining_seconds: 150
+                    is_open: true
+                    status: "ACTIVE"
+                closedWindow:
+                  summary: Window has closed
+                  value:
+                    round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                    window_start: "2026-01-29T14:00:00Z"
+                    window_end: "2026-01-29T14:05:00Z"
+                    current_time: "2026-01-29T14:06:00Z"
+                    time_remaining_seconds: 0
+                    is_open: false
+                    status: "CLOSED"
+
+        '404':
+          description: Round not found
+
+  /rounds/{round_id}/submissions:
+    get:
+      tags:
+        - submissions
+      summary: List participant's submissions for round
+      description: |
+        Returns metadata for all submissions by a participant in a round.
+        Used to display submission history and rate limit status.
+
+      operationId: listSubmissionsForRound
+      parameters:
+        - name: round_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: participant_id
+          in: query
+          required: true
+          description: Filter by participant
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '200':
+          description: List of submissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubmissionMetadata'
+                  total_count:
+                    type: integer
+                    description: Total submissions by participant in round
+                  max_allowed:
+                    type: integer
+                    description: Rate limit for round
+                  can_submit_more:
+                    type: boolean
+                    description: Whether participant can submit again
+
+              example:
+                submissions:
+                  - submission_id: "f1a2b3c4-5678-90ab-cdef-1234567890ef"
+                    participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                    timestamp: "2026-01-29T14:02:30Z"
+                    modality: "TEXT"
+                    counted: false
+                  - submission_id: "a2b3c4d5-5678-90ab-cdef-1234567890fg"
+                    participant_id: "a1b2c3d4-5678-90ab-cdef-1234567890ab"
+                    round_id: "e1f2g3h4-5678-90ab-cdef-1234567890cd"
+                    timestamp: "2026-01-29T14:03:15Z"
+                    modality: "TEXT"
+                    counted: true
+                total_count: 2
+                max_allowed: 3
+                can_submit_more: true
+
+  /voice/transcribe:
+    post:
+      tags:
+        - voice
+      summary: Transcribe voice recording
+      description: |
+        Uploads audio and returns transcript via OpenAI Whisper API.
+        Target latency: < 3 seconds (SC-002).
+
+        **Flow**:
+        1. Client uploads audio
+        2. Server sends to Whisper API
+        3. Server returns transcript for participant review
+        4. Participant accepts → POST /submissions (separate call)
+        5. Participant re-records → DELETE /voice/{recording_id}, retry
+
+      operationId: transcribeVoice
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: Audio file (WAV, MP3, M4A, etc.)
+                participant_id:
+                  type: string
+                  format: uuid
+                round_id:
+                  type: string
+                  format: uuid
+              required:
+                - audio
+                - participant_id
+                - round_id
+
+      responses:
+        '200':
+          description: Transcription successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptResponse'
+              example:
+                transcript_id: "b1c2d3e4-5678-90ab-cdef-1234567890gh"
+                recording_id: "c1d2e3f4-5678-90ab-cdef-1234567890hi"
+                transcript_text: "We need to focus on improving the onboarding experience for new users."
+                reviewed: false
+                latency_ms: 1820
+
+        '400':
+          description: Invalid audio file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "INVALID_AUDIO"
+                message: "Audio file format not supported. Please use WAV, MP3, or M4A."
+
+        '422':
+          description: Transcription outside window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Transcription service failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "TRANSCRIPTION_FAILED"
+                message: "Unable to transcribe audio. Please try re-recording."
+                details:
+                  provider: "OpenAI Whisper API"
+                  retryable: true
+
+  /voice/{recording_id}:
+    delete:
+      tags:
+        - voice
+      summary: Delete audio recording and transcript
+      description: |
+        Discards audio and transcript when participant re-records.
+        Immediately deletes ephemeral data (AudioRecording and Transcript).
+
+      operationId: deleteRecording
+      parameters:
+        - name: recording_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      responses:
+        '204':
+          description: Recording deleted successfully
+
+        '404':
+          description: Recording not found
+
+  /ws/rounds/{round_id}/timer:
+    get:
+      tags:
+        - windows
+      summary: WebSocket for real-time countdown timer
+      description: |
+        WebSocket endpoint for receiving real-time countdown updates.
+
+        **Server broadcasts every 1 second**:
+        ```json
+        {
+          "round_id": "uuid",
+          "time_remaining_seconds": 150,
+          "is_open": true,
+          "timestamp": "2026-01-29T14:02:31Z"
+        }
+        ```
+
+        **Client responsibilities**:
+        - Connect on round page load
+        - Apply client-side latency correction: `display_time = time_remaining - (client_now - broadcast_timestamp)`
+        - Fallback to polling GET /rounds/{round_id}/window if disconnected
+
+      parameters:
+        - name: round_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+components:
+  schemas:
+    SubmissionRequest:
+      type: object
+      required:
+        - participant_id
+        - round_id
+        - submission_text
+        - modality
+      properties:
+        participant_id:
+          type: string
+          format: uuid
+          description: Stable participant identifier (FR-032)
+        round_id:
+          type: string
+          format: uuid
+          description: Target round for submission
+        submission_text:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          description: Normalized text input (typed or transcript)
+        modality:
+          type: string
+          enum: [TEXT, VOICE]
+          description: Input method
+
+    SubmissionResponse:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+          description: Server-side timestamp (authoritative)
+        modality:
+          type: string
+          enum: [TEXT, VOICE]
+        counted:
+          type: boolean
+          description: Is this the counted submission for participant?
+        message:
+          type: string
+          description: User-visible feedback
+
+    SubmissionMetadata:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+          format: uuid
+        round_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        modality:
+          type: string
+          enum: [TEXT, VOICE]
+        counted:
+          type: boolean
+          description: True if this is the last-approved-wins submission
+
+    WindowStatus:
+      type: object
+      properties:
+        round_id:
+          type: string
+          format: uuid
+        window_start:
+          type: string
+          format: date-time
+          description: Inclusive start boundary (FR-009)
+        window_end:
+          type: string
+          format: date-time
+          description: Exclusive end boundary (FR-009)
+        current_time:
+          type: string
+          format: date-time
+          description: Server current time (authoritative)
+        time_remaining_seconds:
+          type: integer
+          description: Seconds until window closes (0 if closed)
+        is_open:
+          type: boolean
+          description: Whether submissions are currently accepted
+        status:
+          type: string
+          enum: [PENDING, ACTIVE, CLOSED, COMPLETED]
+          description: Round status
+
+    TranscriptResponse:
+      type: object
+      properties:
+        transcript_id:
+          type: string
+          format: uuid
+        recording_id:
+          type: string
+          format: uuid
+          description: Reference for deletion if re-recording
+        transcript_text:
+          type: string
+          description: Whisper API transcription output
+        reviewed:
+          type: boolean
+          description: Has participant seen transcript? (set to true on first GET)
+        latency_ms:
+          type: integer
+          description: Transcription latency (monitoring for SC-002)
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - INVALID_CONTENT
+            - RATE_LIMIT_EXCEEDED
+            - OUTSIDE_WINDOW
+            - INVALID_AUDIO
+            - TRANSCRIPTION_FAILED
+          description: Machine-readable error code
+        message:
+          type: string
+          description: User-visible error message (explicit feedback per FR-028)
+        details:
+          type: object
+          additionalProperties: true
+          description: Context-specific error details
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token containing participant_id claim.
+        Authentication handled by community/auth layer (Assumption 3).
+
+security:
+  - bearerAuth: []
